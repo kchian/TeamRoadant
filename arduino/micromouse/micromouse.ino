@@ -41,8 +41,8 @@ const int receivers[4]={19,18,17,16};
 int reading[4]={0,0,0,0};
 const int frontLeftReciever = 19;
 const int leftReciever = 18;
-const int rightReciever = 17;
-const int frontRightReciever = 16;
+const int frontRightReciever = 17;
+const int rightReciever = 16;
 
 void setup() 
 {
@@ -64,12 +64,12 @@ void setup()
   // frontRightRecieverer pin setup
   pinMode(frontLeftReciever, INPUT);
   pinMode(leftReciever, INPUT);
+  pinMode(frontRightReciever, INPUT); 
   pinMode(rightReciever, INPUT);
-  pinMode(frontRightReciever, INPUT);
 
   // Serial Monitor
   Serial.begin(9600);
-  Serial.println("Micromouse: Team Kavianpour");
+  Serial.println("Micromouse: Team Roadant");
 }
 
 void loop()
@@ -81,7 +81,7 @@ void loop()
 
   int r1;
   
-  r1 = analogRead(rightReciever);
+  r1 = analogRead(frontRightReciever);
   Serial.println(r1);
   delay(100);
 }
