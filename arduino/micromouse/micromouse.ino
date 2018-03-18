@@ -13,6 +13,9 @@ void emit(float);//activate emitters for a given time
 
 int Receive();
 
+// Built-in led
+const int led = 13;
+
 // Motor PWM pins
 const int m1Forward = 3;
 const int m1Reverse = 4;
@@ -47,7 +50,7 @@ const int rightReciever = 16;
 void setup() 
 {
   // Built-in led
-  pinMode(13, OUTPUT);
+  pinMode(led, OUTPUT);
   
   // Motor pin setup
   pinMode(m1Forward, OUTPUT);
@@ -69,7 +72,7 @@ void setup()
 
   // Serial Monitor
   Serial.begin(9600);
-  Serial.println("Micromouse: Team Roadant");
+  Serial.println("Micromouse: Team Roadent");
 }
 
 void loop()
@@ -79,10 +82,32 @@ void loop()
   digitalWrite(emit3, HIGH);
   digitalWrite(emit4, HIGH);
 
-  int r1;
   
+  //digitalWrite(led, HIGH);   // set the LED on
+  
+  //delay(1000);                  // wait for a second
+  //digitalWrite(led, LOW);    // set the LED off
+  
+  int r1;
+  int r2;
+  int r3;
+  int r4;
   r1 = analogRead(frontRightReciever);
+  r2 = analogRead(frontLeftReciever);
+  r3 = analogRead(rightReciever);
+  r4 = analogRead(leftReciever);
+
+
+  Serial.print("Right Reciever: ");
+  Serial.println(r3);
+  Serial.print("Front Right Reciever: ");
   Serial.println(r1);
+  Serial.print("Front Left Reciever: ");
+  Serial.println(r2);
+  Serial.print("Left Reciever: ");
+  Serial.println(r4);
+  Serial.println();
+
   delay(100);
 }
 
@@ -92,7 +117,7 @@ void onLight()
   digitalWrite(13, HIGH);
   delay(1000);
   digitalWrite(13, LOW);
-  delay(1000);
+  delay(100);
 }
 
 void travel (float motorSpeed, float t)//moves  at speed s for time s
