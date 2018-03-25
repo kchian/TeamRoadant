@@ -3,7 +3,7 @@
 
 # #### Python algorithm testing: for easy POC + debugging ###
 
-# In[64]:
+# In[48]:
 
 
 # 16x16 grid representing walls, 2D "bytearray"
@@ -17,8 +17,11 @@ EAST    = 0x2
 SOUTH   = 0x4
 WEST    = 0x8
 
+# The size of each cell in the output
+PRINT_SIZE = 9
 
-# In[266]:
+
+# In[2]:
 
 
 # 16x16, mazes thanks to https://github.com/micromouseonline/micromouse-maze
@@ -48,48 +51,46 @@ physical_maze = [
 #             physical_maze[ind/16][ind%16] = char
 
 
-# In[272]:
+# In[73]:
 
 
 def printMaze(maze,robot,weights=None,history=None):
     # maze out is a list of strings, each representing a row
-    maze_out = [list('   '.join('+'*17))]
-    maze_out += [list(' '*65)]
-    maze_out += [list(' '*65)]
+    maze_out = [list((' '*PRINT_SIZE).join('+'*17))]
+    maze_out += [list(' '*((PRINT_SIZE+1)*16+1))]
+    maze_out += [list(' '*((PRINT_SIZE+1)*16+1))]
     for line in range(15):
-        maze_out += [list('+  ' + ('+  '.join(list(' '*16))) + '+')]
-        maze_out += [list(' '*65)]
-        maze_out += [list(' '*65)]
-    maze_out += [list('   '.join('+'*17))]
+        maze_out += [list('+'+(' '*(PRINT_SIZE-1)) + (('+'+' '*(PRINT_SIZE-1)).join(list(' '*16))) + '+')]
+        maze_out += [list(' '*((PRINT_SIZE+1)*16+1))]
+        maze_out += [list(' '*((PRINT_SIZE+1)*16+1))]
+    maze_out += [list((' '*PRINT_SIZE).join('+'*17))]
     # In the data, the mouse 
     for ind,i in enumerate(maze):
         # row is ind/16, col is ind%16
         # from 0,0, bottommost row, leftmost column
         # to 1,0, second to bottom row, leftmost column
         if i & NORTH:
-            maze_out[48-((ind%16)+1)*3][int(ind/16)*4+1] = '-'
-            maze_out[48-((ind%16)+1)*3][int(ind/16)*4+2] = '-'
-            maze_out[48-((ind%16)+1)*3][int(ind/16)*4+3] = '-'
+            for s in range(1,PRINT_SIZE+1):
+                maze_out[48-((ind%16)+1)*3][int(ind/16)*(PRINT_SIZE+1)+s] = '-'
         if i & EAST:
-            maze_out[48-((ind%16)+1)*3 + 1][int(ind/16)*4+4] = '|'
-            maze_out[48-((ind%16)+1)*3 + 2][int(ind/16)*4+4] = '|'
+            maze_out[48-((ind%16)+1)*3 + 1][int(ind/16)*(PRINT_SIZE+1)+(PRINT_SIZE+1)] = '|'
+            maze_out[48-((ind%16)+1)*3 + 2][int(ind/16)*(PRINT_SIZE+1)+(PRINT_SIZE+1)] = '|'
         if i & SOUTH:
-            maze_out[48-((ind%16))*3][int(ind/16)*4+1] = '-'
-            maze_out[48-((ind%16))*3][int(ind/16)*4+2] = '-'
-            maze_out[48-((ind%16))*3][int(ind/16)*4+3] = '-'
+            for s in range(1,PRINT_SIZE+1):
+                maze_out[48-((ind%16))*3][int(ind/16)*(PRINT_SIZE+1)+s] = '-'
         if i & WEST:
-            maze_out[48-((ind%16)+1)*3 + 1][int(ind/16)*4] = '|'
-            maze_out[48-((ind%16)+1)*3 + 2][int(ind/16)*4] = '|'
+            maze_out[48-((ind%16)+1)*3 + 1][int(ind/16)*(PRINT_SIZE+1)] = '|'
+            maze_out[48-((ind%16)+1)*3 + 2][int(ind/16)*(PRINT_SIZE+1)] = '|'
     
     #mouse location
     if robot.dir & NORTH:
-        maze_out[48-(robot.row*3+2)][robot.col*4+2] = '^'
+        maze_out[48-(robot.row*3+2)][robot.col*(PRINT_SIZE+1)+2] = '^'
     if robot.dir & EAST:
-        maze_out[48-(robot.row*3+2)][robot.col*4+3] = '>'
+        maze_out[48-(robot.row*3+2)][robot.col*(PRINT_SIZE+1)+3] = '>'
     if robot.dir & SOUTH:
-        maze_out[48-(robot.row*3+2)][robot.col*4+2] = 'v'
+        maze_out[48-(robot.row*3+2)][robot.col*(PRINT_SIZE+1)+2] = 'v'
     if robot.dir & WEST:
-        maze_out[48-(robot.row*3+2)][robot.col*4+1] = '<'
+        maze_out[48-(robot.row*3+2)][robot.col*(PRINT_SIZE+1)+1] = '<'
     
     
     #Prints where the weights are
@@ -97,29 +98,59 @@ def printMaze(maze,robot,weights=None,history=None):
         for n,i in enumerate(weights):
             for m,j in enumerate(i):
                 if j:
-                    maze_out[48-(n*3+2)][m*4+2] = '*'
-        
-        
+                    # Ad-hoc but efficient way of guaranteeing 3 characters to print....
+                    if j.north:
+                        v = 'N'+str(j.north+.0000001)[:int(PRINT_SIZE/2-1)]
+                        for ind in range(len(v)):
+                            maze_out[48-(n*3+2)][m*(PRINT_SIZE+1)+ind+1+int(PRINT_SIZE/2)] = v[ind]
+                    if j.south:
+                        v = 'S'+str(j.south+.0000001)[:int(PRINT_SIZE/2-1)]
+                        for ind in range(len(v)):
+                            maze_out[48-(n*3+1)][m*(PRINT_SIZE+1)+ind+1] = v[ind]
+                    if j.west:
+                        v = 'W'+str(j.west+.0000001)[:int(PRINT_SIZE/2-1)]
+                        for ind in range(len(v)):
+                            maze_out[48-(n*3+2)][m*(PRINT_SIZE+1)+ind+1] = v[ind]
+                    if j.east:
+                        v = 'E'+str(j.east+.0000001)[:int(PRINT_SIZE/2-1)]
+                        for ind in range(len(v)):
+                            maze_out[48-(n*3+1)][m*(PRINT_SIZE+1)+ind+1+int(PRINT_SIZE/2)] = v[ind]
+            
 
     #print('\n'.join([''.join(i) for i in maze_out]))
     with open('mazeiters','a+') as f:
         f.write('\n'.join([''.join(i) for i in maze_out])+'\n'+'#'*100+'\n')
 
 
-# In[273]:
+# In[64]:
 
 
 def search(row,col):
     return physical_maze[col*16+row]
 
 
-# In[276]:
+# In[14]:
+
+
+# Cell weight tracker
+class Cell:
+    def __init__(self,north=None, south=None, east=None, west=None):
+        self.north = north
+        self.south = south
+        self.east = east
+        self.west = west
+    
+    def __repr__(self):
+        return 'Cell:' + 'N: ' + str(self.north) + ' E: ' + str(self.east) + ' S: ' + str(self.south) + 'W: ' + str(self.west) + '   '
+
+
+# In[15]:
 
 
 neighbor_pattern = [(0,1),(0,-1),(1,0),(-1,0)]
 
 
-# In[283]:
+# In[16]:
 
 
 class Mouse:
@@ -162,7 +193,7 @@ class Mouse:
         for d in [NORTH,EAST,SOUTH,WEST]:
             # if there is not a wall
             if not self.memory[r][c] & d:
-                print(self.memory[r][c],d)
+                #print(self.memory[r][c],d)
                 # have to reverse the direction: we're going from one cell to the next and thus the relative 
                 # edge changes as well
                 if (d in (NORTH,SOUTH) and edge in (EAST,WEST)) or (edge in (NORTH,SOUTH) and d in (EAST,WEST)):
@@ -185,26 +216,11 @@ class Mouse:
                         self.floodfill(r,c-1,dist+1,EAST)
 
 
-# In[284]:
+# In[74]:
 
 
 open('mazeiters','w+').close()
 m = Mouse(edge=NORTH)
 m.floodfill(m.row,m.col,0,m.edge)
 
-
-
-# In[271]:
-
-
-# Cell weight tracker
-class Cell:
-    def __init__(self,north=None, south=None, east=None, west=None):
-        self.north = north
-        self.south = south
-        self.east = east
-        self.west = west
-    
-    def __repr__(self):
-        return 'Cell:' + 'N: ' + str(self.north) + ' E: ' + str(self.east) + ' S: ' + str(self.south) + 'W: ' + str(self.west) + '   '
 
