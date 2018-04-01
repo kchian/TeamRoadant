@@ -1,17 +1,6 @@
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
 
-/**
-void motormove(int, int, float);//foward, backward pin and rotation speed.
-
-void travel(float, float);//moves motors foward at a given float speed for a given time
-//**BACKWARDS IF SPEED INPUT IS NEGATIVE
-
-void turn(float,float,float);
-//Motor Enable pins *powering through VRegulator.
-**/
-
-// Set a motor to a specific speed
 void IR_Calibration();
 void setMotorPower(int, int, int);
 void readEncoders();
@@ -19,10 +8,7 @@ void setRightMotorSpeed(int);
 void setLeftMotorSpeed(int);
 void readIR();
 int PD_IR();
-
-void emit(float);//activate emitters for a given time
-
-int Receive();
+void getSquaresTraveled();
 
 // Built-in led
 const int led = 13;
@@ -52,7 +38,6 @@ const int emit4 = 20;
 
 // frontRightRecieverer analog pins
 const int receivers[4]={19,18,17,16};
-int reading[4]={0,0,0,0};
 const int frontLeftReciever = 18;
 const int leftReciever = 19;
 const int frontRightReciever = 17;
@@ -88,6 +73,10 @@ int enc2_ticksPerCycle;
 // Motor variables
 int m1Speed = 30;
 int m2Speed = 30;
+
+// Travel Variables
+const double distancePerTick = 0.244346095279;
+int squares = 0;
 
 void setup() 
 {
@@ -130,10 +119,20 @@ void loop()
 
   readEncoders();
 
-  setRightMotorSpeed(150);
-  setLeftMotorSpeed(150);
+  setRightMotorSpeed(10);
+  setLeftMotorSpeed(-10);
 
   PD_IR();
+
+  getSquaresTraveled();
+
+  /**
+  while(squares >= 1)
+  {
+    setMotorPower(m1Forward, m1Reverse, 0);
+    setMotorPower(m2Forward, m2Reverse, 0);
+  }
+  **/
 
   Serial.print("Right Reciever: ");
   Serial.println(r3);
@@ -167,9 +166,12 @@ void loop()
   Serial.print("PD Error: ");
   Serial.println(totalError);
   Serial.println();
+  Serial.print("Squares Traveled: ");
+  Serial.println(squares);
+  Serial.println();
   Serial.println();
   
-  delay(100);
+  delay(10);
 
 }
 
@@ -231,11 +233,11 @@ void setRightMotorSpeed(int targetSpeed)
   setMotorPower(m2Forward, m2Reverse, m2Speed);
 
   // Proportional Adjustment  
-  if (enc2_ticksPerCycle < (targetSpeed - 3))
+  if (enc2_ticksPerCycle < (targetSpeed - 1))
   {
     setMotorPower(m2Forward, m2Reverse, m2Speed++);
   }
-  if (enc2_ticksPerCycle > (targetSpeed + 3))
+  if (enc2_ticksPerCycle > (targetSpeed + 1))
   {
     setMotorPower(m2Forward, m2Reverse, m2Speed--);
   }
@@ -246,11 +248,11 @@ void setLeftMotorSpeed(int targetSpeed)
   setMotorPower(m1Forward, m1Reverse, m1Speed);
 
   // Proportional Adjustment
-  if (enc1_ticksPerCycle < (targetSpeed - 3))
+  if (enc1_ticksPerCycle < (targetSpeed - 1))
   {
     setMotorPower(m1Forward, m1Reverse, m1Speed++);
   }
-  if (enc1_ticksPerCycle > (targetSpeed + 3))
+  if (enc1_ticksPerCycle > (targetSpeed + 1))
   {
     setMotorPower(m1Forward, m1Reverse, m1Speed--);
   }
@@ -312,5 +314,11 @@ int PD_IR()
   oldErrorP = errorP;
   
   return totalError;
+}
+
+void getSquaresTraveled()
+{
+  float encAverage = ((float)(enc1 + enc2)) / 2.0;
+  squares = (int)((encAverage * distancePerTick) / 180.0);
 }
 
