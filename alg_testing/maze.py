@@ -3,7 +3,7 @@
 
 # #### Python algorithm testing: for easy POC + debugging ###
 
-# In[48]:
+# In[2]:
 
 
 # 16x16 grid representing walls, 2D "bytearray"
@@ -16,45 +16,50 @@ NORTH   = 0x1
 EAST    = 0x2
 SOUTH   = 0x4
 WEST    = 0x8
-
 # The size of each cell in the output
-PRINT_SIZE = 9
+PRINT_SIZE = 13
 
 
-# In[2]:
+# In[3]:
 
 
-# 16x16, mazes thanks to https://github.com/micromouseonline/micromouse-maze
-physical_maze = [
-  0x0e, 0x08, 0x0a, 0x08, 0x08, 0x0a, 0x08, 0x0a, 0x09, 0x0c, 0x09, 0x0c, 0x08, 0x0b, 0x0c, 0x09,
-  0x0c, 0x02, 0x08, 0x01, 0x05, 0x0c, 0x02, 0x0a, 0x02, 0x03, 0x06, 0x03, 0x06, 0x0a, 0x03, 0x05,
-  0x05, 0x0e, 0x03, 0x06, 0x00, 0x02, 0x0a, 0x0a, 0x08, 0x08, 0x0b, 0x0c, 0x0a, 0x08, 0x09, 0x05,
-  0x04, 0x09, 0x0c, 0x09, 0x07, 0x0c, 0x09, 0x0d, 0x05, 0x05, 0x0e, 0x01, 0x0d, 0x07, 0x05, 0x05,
-  0x05, 0x04, 0x01, 0x05, 0x0c, 0x03, 0x04, 0x01, 0x06, 0x02, 0x0b, 0x04, 0x02, 0x0a, 0x01, 0x05,
-  0x04, 0x01, 0x04, 0x01, 0x04, 0x09, 0x07, 0x06, 0x09, 0x0e, 0x0a, 0x01, 0x0e, 0x0b, 0x05, 0x05,
-  0x05, 0x04, 0x01, 0x07, 0x05, 0x06, 0x08, 0x0b, 0x06, 0x09, 0x0d, 0x04, 0x0a, 0x0a, 0x01, 0x05,
-  0x04, 0x03, 0x05, 0x0e, 0x03, 0x0c, 0x02, 0x08, 0x09, 0x04, 0x03, 0x04, 0x08, 0x0a, 0x01, 0x05,
-  0x06, 0x08, 0x02, 0x0b, 0x0c, 0x02, 0x09, 0x06, 0x03, 0x06, 0x09, 0x05, 0x07, 0x0d, 0x05, 0x05,
-  0x0e, 0x00, 0x0b, 0x0d, 0x05, 0x0d, 0x07, 0x0c, 0x0a, 0x08, 0x02, 0x02, 0x08, 0x02, 0x01, 0x05,
-  0x0e, 0x03, 0x0c, 0x01, 0x05, 0x06, 0x09, 0x05, 0x0c, 0x00, 0x09, 0x0d, 0x06, 0x09, 0x05, 0x05,
-  0x0c, 0x08, 0x01, 0x05, 0x04, 0x0b, 0x05, 0x04, 0x03, 0x05, 0x06, 0x01, 0x0d, 0x06, 0x01, 0x05,
-  0x07, 0x05, 0x06, 0x00, 0x00, 0x0b, 0x05, 0x06, 0x0a, 0x03, 0x0d, 0x06, 0x00, 0x0b, 0x05, 0x05,
-  0x0e, 0x00, 0x0b, 0x05, 0x07, 0x0c, 0x03, 0x0c, 0x0a, 0x08, 0x02, 0x08, 0x02, 0x08, 0x01, 0x05,
-  0x0e, 0x01, 0x0e, 0x03, 0x0c, 0x02, 0x08, 0x02, 0x08, 0x02, 0x09, 0x06, 0x09, 0x05, 0x07, 0x05,
-0x0e, 0x02, 0x0a, 0x0a, 0x02, 0x0a, 0x02, 0x0a, 0x02, 0x0a, 0x02, 0x0a, 0x02, 0x02, 0x0a, 0x03
-]
+# # 16x16, mazes thanks to https://github.com/micromouseonline/micromouse-maze
+# physical_maze = [
+#   0x0e, 0x08, 0x0a, 0x08, 0x08, 0x0a, 0x08, 0x0a, 0x09, 0x0c, 0x09, 0x0c, 0x08, 0x0b, 0x0c, 0x09,
+#   0x0c, 0x02, 0x08, 0x01, 0x05, 0x0c, 0x02, 0x0a, 0x02, 0x03, 0x06, 0x03, 0x06, 0x0a, 0x03, 0x05,
+#   0x05, 0x0e, 0x03, 0x06, 0x00, 0x02, 0x0a, 0x0a, 0x08, 0x08, 0x0b, 0x0c, 0x0a, 0x08, 0x09, 0x05,
+#   0x04, 0x09, 0x0c, 0x09, 0x07, 0x0c, 0x09, 0x0d, 0x05, 0x05, 0x0e, 0x01, 0x0d, 0x07, 0x05, 0x05,
+#   0x05, 0x04, 0x01, 0x05, 0x0c, 0x03, 0x04, 0x01, 0x06, 0x02, 0x0b, 0x04, 0x02, 0x0a, 0x01, 0x05,
+#   0x04, 0x01, 0x04, 0x01, 0x04, 0x09, 0x07, 0x06, 0x09, 0x0e, 0x0a, 0x01, 0x0e, 0x0b, 0x05, 0x05,
+#   0x05, 0x04, 0x01, 0x07, 0x05, 0x06, 0x08, 0x0b, 0x06, 0x09, 0x0d, 0x04, 0x0a, 0x0a, 0x01, 0x05,
+#   0x04, 0x03, 0x05, 0x0e, 0x03, 0x0c, 0x02, 0x08, 0x09, 0x04, 0x03, 0x04, 0x08, 0x0a, 0x01, 0x05,
+#   0x06, 0x08, 0x02, 0x0b, 0x0c, 0x02, 0x09, 0x06, 0x03, 0x06, 0x09, 0x05, 0x07, 0x0d, 0x05, 0x05,
+#   0x0e, 0x00, 0x0b, 0x0d, 0x05, 0x0d, 0x07, 0x0c, 0x0a, 0x08, 0x02, 0x02, 0x08, 0x02, 0x01, 0x05,
+#   0x0e, 0x03, 0x0c, 0x01, 0x05, 0x06, 0x09, 0x05, 0x0c, 0x00, 0x09, 0x0d, 0x06, 0x09, 0x05, 0x05,
+#   0x0c, 0x08, 0x01, 0x05, 0x04, 0x0b, 0x05, 0x04, 0x03, 0x05, 0x06, 0x01, 0x0d, 0x06, 0x01, 0x05,
+#   0x07, 0x05, 0x06, 0x00, 0x00, 0x0b, 0x05, 0x06, 0x0a, 0x03, 0x0d, 0x06, 0x00, 0x0b, 0x05, 0x05,
+#   0x0e, 0x00, 0x0b, 0x05, 0x07, 0x0c, 0x03, 0x0c, 0x0a, 0x08, 0x02, 0x08, 0x02, 0x08, 0x01, 0x05,
+#   0x0e, 0x01, 0x0e, 0x03, 0x0c, 0x02, 0x08, 0x02, 0x08, 0x02, 0x09, 0x06, 0x09, 0x05, 0x07, 0x05,
+#   0x0e, 0x02, 0x0a, 0x0a, 0x02, 0x0a, 0x02, 0x0a, 0x02, 0x0a, 0x02, 0x0a, 0x02, 0x02, 0x0a, 0x03
+# ]
 
+physical_maze = [0 for i in range(256)]
 # raw_maze = ''
-# try:
-#     with open('50.maz') as f:
-#         for ind,char in enumerate(f):
-#             physical_maze[ind/16][ind%16] = char
+# Assumes valid maze file....
+with open('japan-2011-finals.maz','rb') as f:
+    ind = 0
+    for line in f:
+        for char in line:
+            physical_maze[ind] = char
+            ind += 1
+print(len(physical_maze))
+print(physical_maze)
 
 
-# In[73]:
+# In[99]:
 
 
-def printMaze(maze,robot,weights=None,history=None):
+def printMaze(maze,robot,n_weights=None,w_weights=None):
     # maze out is a list of strings, each representing a row
     maze_out = [list((' '*PRINT_SIZE).join('+'*17))]
     maze_out += [list(' '*((PRINT_SIZE+1)*16+1))]
@@ -64,9 +69,17 @@ def printMaze(maze,robot,weights=None,history=None):
         maze_out += [list(' '*((PRINT_SIZE+1)*16+1))]
         maze_out += [list(' '*((PRINT_SIZE+1)*16+1))]
     maze_out += [list((' '*PRINT_SIZE).join('+'*17))]
-    # In the data, the mouse 
+    # if the maze is a 2d array, unpack it 
+    if type(maze[0]) == list:
+        maze = list(list(reversed(i) for i in zip(*maze[::-1])))
+        m2 = []
+        for i in maze:
+            for j in i:
+                m2.append(j)
+        maze = m2
     for ind,i in enumerate(maze):
-        # row is ind/16, col is ind%16
+        # In the data, the mouse 
+        # row is ind%16, col is ind/16 (rotated)
         # from 0,0, bottommost row, leftmost column
         # to 1,0, second to bottom row, leftmost column
         if i & NORTH:
@@ -94,63 +107,62 @@ def printMaze(maze,robot,weights=None,history=None):
     
     
     #Prints where the weights are
-    if weights:
-        for n,i in enumerate(weights):
+    if n_weights:
+        for n,i in enumerate(n_weights):
             for m,j in enumerate(i):
-                if j:
+                if j != 99999:
                     # Ad-hoc but efficient way of guaranteeing 3 characters to print....
-                    if j.north:
-                        v = 'N'+str(j.north+.0000001)[:int(PRINT_SIZE/2-1)]
-                        for ind in range(len(v)):
-                            maze_out[48-(n*3+2)][m*(PRINT_SIZE+1)+ind+1+int(PRINT_SIZE/2)] = v[ind]
-                    if j.south:
-                        v = 'S'+str(j.south+.0000001)[:int(PRINT_SIZE/2-1)]
-                        for ind in range(len(v)):
-                            maze_out[48-(n*3+1)][m*(PRINT_SIZE+1)+ind+1] = v[ind]
-                    if j.west:
-                        v = 'W'+str(j.west+.0000001)[:int(PRINT_SIZE/2-1)]
-                        for ind in range(len(v)):
-                            maze_out[48-(n*3+2)][m*(PRINT_SIZE+1)+ind+1] = v[ind]
-                    if j.east:
-                        v = 'E'+str(j.east+.0000001)[:int(PRINT_SIZE/2-1)]
-                        for ind in range(len(v)):
-                            maze_out[48-(n*3+1)][m*(PRINT_SIZE+1)+ind+1+int(PRINT_SIZE/2)] = v[ind]
-            
+                    v = 'N'+str(j+.0000001)[:int(PRINT_SIZE/2-1)]
+                    for ind in range(len(v)):
+                        maze_out[48-(n*3+2)][m*(PRINT_SIZE+1)+ind+1+int(PRINT_SIZE/2)] = v[ind]
+    if w_weights:
+        for n,i in enumerate(w_weights):
+            for m,j in enumerate(i):
+                if j != 99999:
+                    v = 'W'+str(j+.0000001)[:int(PRINT_SIZE/2-1)]
+                    for ind in range(len(v)):
+                        maze_out[48-(n*3+1)][m*(PRINT_SIZE+1)+ind+1] = v[ind]
+
 
     #print('\n'.join([''.join(i) for i in maze_out]))
     with open('mazeiters','a+') as f:
         f.write('\n'.join([''.join(i) for i in maze_out])+'\n'+'#'*100+'\n')
 
 
-# In[64]:
+# In[100]:
 
 
 def search(row,col):
     return physical_maze[col*16+row]
 
 
-# In[14]:
+# In[101]:
 
 
 # Cell weight tracker
 class Cell:
     def __init__(self,north=None, south=None, east=None, west=None):
         self.north = north
-        self.south = south
-        self.east = east
         self.west = west
     
     def __repr__(self):
-        return 'Cell:' + 'N: ' + str(self.north) + ' E: ' + str(self.east) + ' S: ' + str(self.south) + 'W: ' + str(self.west) + '   '
+        return 'Cell:' + 'N: ' + str(self.north) + 'W: ' + str(self.west) + '   '
 
 
-# In[15]:
+# In[116]:
+
+
+class StopRecursion(BaseException):
+    pass
+
+
+# In[117]:
 
 
 neighbor_pattern = [(0,1),(0,-1),(1,0),(-1,0)]
 
 
-# In[16]:
+# In[120]:
 
 
 class Mouse:
@@ -164,63 +176,231 @@ class Mouse:
         #Each cell in the memory is initialized to 0, or no walls.
         self.memory = [[0]*16 for i in range(16)]
         #Each node in the weights represents an edge
-        self.weights = [[None]*16 for i in range(16)]
+        self.n_weights = [[99999]*16 for i in range(16)]
+        self.w_weights = [[99999]*16 for i in range(16)]
+        self.old_n = [[None]*16 for i in range(16)]
+        self.old_w = [[None]*16 for i in range(16)]
+        self.old_memory = [[0]*16 for i in range(16)]
+        self.goal_found = False
         self.path = []
         self.relative_path = []
+        self.merged = False
+        self.visited = []
             
     def neighbors(self,row,col):
         x = [(row+1,col), (row-1,col),(row,col+1),(row,col-1)]
         return [i for i in x if i[0]<16 and i[1]<16]
-                
-    # Important to note that there's no logic for telling how many "units" we've moved in this
-    # End goal: diagonal maze solving like http://ieeexplore.ieee.org/document/6852576/ 
-    # So each edge has a distance, and we'll assume we start on the bottom edge...
-    def floodfill(self,r,c,dist,edge):
-        if self.memory[r][c] & CHECKED:
+    
+    def set_weight(self, r,c, direction, value):
+        if direction == NORTH and (self.n_weights[r][c] == None or self.n_weights[r][c] > value):
+            self.n_weights[r][c] = value
+        if direction == WEST and (self.w_weights[r][c] == None or self.w_weights[r][c] > value):
+            self.w_weights[r][c] = value
+            
+    def at_goal(self):
+        return self.row in (7,8) and self.col in (7,8)
+    
+    def floodfill_helper(self):
+        self.floodfill(0,0,0,self.edge)
+    
+    #floodfill algorithm on the mouse memory
+    def floodfill(self,r,c,dist,edge):        
+        if (r,c) in self.visited:
             return
-        printMaze(physical_maze,Mouse(r,c,edge),self.weights)        
-        self.memory[r][c] = search(r,c) + CHECKED
-        if self.weights[r][c] is None:
-            self.weights[r][c] = Cell()
+        self.visited += [(r,c)]
+        if not self.memory[r][c] & CHECKED:
+            return
+        printMaze(self.memory,Mouse(r,c,NORTH),self.n_weights,self.w_weights)        
+
         if edge == NORTH:
-            self.weights[r][c].north=dist
-        if edge == EAST:
-            self.weights[r][c].east=dist            
-        if edge == SOUTH:
-            self.weights[r][c].south=dist
+            if not self.memory[r][c] & WEST:
+                self.set_weight(r,c,WEST,dist+.7)
+            if not self.memory[r][c] & NORTH:
+                self.set_weight(r,c,NORTH,dist+1)
+            if not self.memory[r][c] & EAST:
+                self.set_weight(r,c+1,WEST,dist+.7)
+            if not self.memory[r][c] & SOUTH:
+                self.set_weight(r-1,c,NORTH,dist)
         if edge == WEST:
-            self.weights[r][c].west=dist      
-        for d in [NORTH,EAST,SOUTH,WEST]:
-            # if there is not a wall
+            if not self.memory[r][c] & WEST:
+                self.set_weight(r,c,WEST,dist+1)
+            if not self.memory[r][c] & NORTH:
+                self.set_weight(r,c,NORTH,dist+.7)
+            if not self.memory[r][c] & EAST:
+                    self.set_weight(r,c+1,WEST,dist)
+            if not self.memory[r][c] & SOUTH:
+                    self.set_weight(r-1,c,NORTH,dist+.7)
+        if edge == EAST:
+            if not self.memory[r][c] & WEST:
+                self.set_weight(r,c,WEST,dist)
+            if not self.memory[r][c] & NORTH:
+                self.set_weight(r,c,NORTH,dist+.7)
+            if not self.memory[r][c] & EAST:
+                self.set_weight(r,c+1,WEST,dist+1)
+            if not self.memory[r][c] & SOUTH:
+                self.set_weight(r-1,c,NORTH,dist+.7)
+        if edge == SOUTH:
+            if not self.memory[r][c] & WEST:
+                self.set_weight(r,c,WEST,dist+.7)
+            if not self.memory[r][c] & NORTH:
+                self.set_weight(r,c,NORTH,dist)
+            if not self.memory[r][c] & EAST:
+                self.set_weight(r,c+1,WEST,dist+.7)
+            if not self.memory[r][c] & SOUTH:
+                self.set_weight(r-1,c,NORTH,dist+1)
+
+        for d in [NORTH,SOUTH,EAST,WEST]:
+
+            # if there is not a wall                
             if not self.memory[r][c] & d:
                 #print(self.memory[r][c],d)
                 # have to reverse the direction: we're going from one cell to the next and thus the relative 
                 # edge changes as well
                 if (d in (NORTH,SOUTH) and edge in (EAST,WEST)) or (edge in (NORTH,SOUTH) and d in (EAST,WEST)):
-                    if d == NORTH and r < 16:
-                        self.floodfill(r+1,c,dist+.7,SOUTH)
-                    elif d == SOUTH and r > -1:
-                        self.floodfill(r-1,c,dist+.7,NORTH)
-                    elif d == EAST and c < 16:
-                        self.floodfill(r,c+1,dist+.7,WEST)
-                    elif d == WEST and c > -1:
-                        self.floodfill(r,c-1,dist+.7,EAST)
+                    if d == NORTH and r < 15:
+                        self.floodfill(r+1,c,dist+.7,NORTH)
+                    elif d == SOUTH and r > 0:
+                        self.floodfill(r-1,c,dist+.7,SOUTH)
+                    elif d == EAST and c < 15:
+                        self.floodfill(r,c+1,dist+.7,EAST)
+                    elif d == WEST and c > 0:
+                        self.floodfill(r,c-1,dist+.7,WEST)
                 else: 
-                    if d == NORTH and r < 16:
-                        self.floodfill(r+1,c,dist+1,SOUTH)
-                    elif d == SOUTH and r > -1:
-                        self.floodfill(r-1,c,dist+1,NORTH)
-                    elif d == EAST and c < 16:
-                        self.floodfill(r,c+1,dist+1,WEST)
-                    elif d == WEST and c > -1:
-                        self.floodfill(r,c-1,dist+1,EAST)
+                    if d == NORTH and r < 15:
+                        self.floodfill(r+1,c,dist+1,NORTH)
+                    elif d == SOUTH and r > 0:
+                        self.floodfill(r-1,c,dist+1,SOUTH)
+                    elif d == EAST and c < 15:
+                        self.floodfill(r,c+1,dist+1,EAST)
+                    elif d == WEST and c > 0:
+                        self.floodfill(r,c-1,dist+1,WEST)
+    
+    
+#-----------------------------------------------------------------------------------------------
+    # Important to note that there's no logic for telling how many "units" we've moved in this
+    # End goal: diagonal maze solving like http://ieeexplore.ieee.org/document/6852576/ 
+    # So each edge has a distance, and we'll assume we start on the bottom edge...        
+    
+    def map_helper(self):
+        try:
+            self.map(0,self.edge)
+        except StopRecursion:
+            pass
+    #edge here is the edge we start at
+    def map(self,dist,edge):
+        if self.at_goal() and not self.goal_found:
+            self.goal_found = True
+#             self.old_n = list(self.n_weights)
+#             self.old_w = list(self.w_weights)
+            #reset memory to find home
+            self.n_weights = [[99999]*16 for i in range(16)]
+#             self.w_weights = [[99999]*16 for i in range(16)]
+            self.old_memory = list([list(i) for i in self.memory])
+            self.memory = [[0]*16 for i in range(16)]
+            self.map(0,edge)
+            return
+        #print(self.row,self.col)
+        
+        if self.goal_found and (self.row == 0 and self.col == 0):
+#                                 #or (edge != NORTH and self.row-1 == 0 and self.col == 0)
+#                                 #or (edge != WEST and self.row == 0 and self.col+1 == 0)):
+#             #There's a potential optimization here: when we're heading back home we should always 
+#             #go towards the bottom right corner of the maze: 0,0. This means that below in the recursive part,
+#             #the ordering could change...
+            if self.merged:
+                return            
+            for i in range(16):
+                for j in range(16):
+                    self.memory[i][j] = max(self.memory[i][j],self.old_memory[i][j])
+#             # merge memories for solving
+#             # this is the real maximum because the other one is 99999, aka infinite weighting
+#             maximum = min(self.n_weights[0][0],self.w_weights[0][0])
+#             printMaze(physical_maze,self,self.n_weights,self.w_weights)        
+
+#             for i in range(16):
+#                 for j in range(16):
+#                     if self.n_weights[i][j] != 99999 and maximum >= self.n_weights[i][j] :
+#                         self.n_weights[i][j] = min(maximum - self.n_weights[i][j], self.old_n[i][j])
+#                     else:
+#                         self.n_weights[i][j] = 99999
+#                     if self.w_weights[i][j] != 99999 and maximum >= self.w_weights[i][j]:
+#                         self.w_weights[i][j] = min(maximum - self.w_weights[i][j], self.old_w[i][j])
+#                     else:
+#                         self.n_weights[i][j] = 99999
+            self.merged = True
+            raise StopRecursion()
+            
+        if self.memory[self.row][self.col] & CHECKED:
+#             if not self.memory[self.row][self.col] & WEST:
+#                 self.set_weight(self.row,self.col,WEST,dist+.7)
+#             if not self.memory[self.row][self.col] & NORTH:
+#                 self.set_weight(self.row,self.col,NORTH,dist+.7)
+            return
+        self.memory[self.row][self.col] = search(self.row,self.col) + CHECKED
+        printMaze(self.memory,self,self.n_weights,self.w_weights)        
+
+        
+        for d in [NORTH,SOUTH,EAST,WEST]:
+            if self.merged:
+                return
+            # if there is not a wall                
+            if not self.memory[self.row][self.col] & d:
+                #print(self.memory[self.row][self.col],d)
+                # have to reverse the direction: we're going from one cell to the next and thus the relative 
+                # edge changes as well
+                if (d in (NORTH,SOUTH) and edge in (EAST,WEST)) or (edge in (NORTH,SOUTH) and d in (EAST,WEST)):
+                    if d == NORTH and self.row < 15:
+                        self.row += 1
+                        self.map(dist+.7,NORTH)
+                        if not self.merged:
+                            self.row -= 1
+                    elif d == SOUTH and self.row > 0:
+                        self.row -= 1
+                        self.map(dist+.7,SOUTH)
+                        if not self.merged:
+                            self.row += 1
+                    elif d == EAST and self.col < 15:
+                        self.col +=1 
+                        self.map(dist+.7,EAST)
+                        if not self.merged:
+                            self.col -= 1
+                    elif d == WEST and self.col > 0:
+                        self.col -= 1
+                        self.map(dist+.7,WEST)
+                        if not self.merged:
+                            self.col += 1
+                else: 
+                    if d == NORTH and self.row < 15:
+                        self.row += 1
+                        self.map(dist+1,NORTH)
+                        if not self.merged:
+                            self.row -= 1
+                    elif d == SOUTH and self.row > 0:
+                        self.row -= 1
+                        self.map(dist+1,SOUTH)
+                        if not self.merged:
+                            self.row += 1
+                    elif d == EAST and self.col < 15:
+                        self.col += 1
+                        self.map(dist+1,EAST)
+                        if not self.merged:
+                            self.col -= 1
+                    elif d == WEST and self.col > 0:
+                        self.col -= 1
+                        self.map(dist+1,WEST)
+                        if not self.merged:
+                            self.col += 1
 
 
-# In[74]:
+# In[121]:
 
 
 open('mazeiters','w+').close()
 m = Mouse(edge=NORTH)
-m.floodfill(m.row,m.col,0,m.edge)
+m.map_helper()
+printMaze(physical_maze,m,m.n_weights,m.w_weights)  
+#we might need a special case for where the mouse starts
+m.floodfill_helper()
+printMaze(physical_maze,m,m.n_weights,m.w_weights)  
 
 
