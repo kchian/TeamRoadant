@@ -4,9 +4,9 @@
 void IR_Calibration();
 void setMotorPower(int, int, int);
 void readEncoders();
-int PD_Motor();
+void PD_Motor();
 void readIR();
-int PD_IR();
+void PD_IR();
 void getSquaresTraveled();
 
 // Built-in led
@@ -58,8 +58,8 @@ int leftWallIR;
 int rightWallIR;
 int rightLeftOffset;
 float totalError_IR;
-float P_IR = 1.0;
-float D_IR = 0.5;
+float P_IR = 0.2; // Tuned
+float D_IR = 0.5; // Tuned
 
 // PD Motor variables
 int errorP_m1;
@@ -70,8 +70,8 @@ int oldErrorP_m1;
 int oldErrorP_m2;
 float totalError_m1;
 float totalError_m2;
-float P_motor = 0.8; // Tuned
-float D_motor = 1.0; // Tuned
+float P_motor = 0.6; // Tuned
+float D_motor = 0.6; // Tuned
 
 // Encoder variables
 long enc1;
@@ -131,7 +131,7 @@ void loop()
   readEncoders();
 
   PD_IR();
-  PD_Motor(10, 10);
+  PD_Motor(50, 50);
 
   getSquaresTraveled();
   
@@ -181,7 +181,7 @@ void loop()
   Serial.println();
   Serial.println();
   
-  delay(10);
+  delay(50);
 
 }
 
@@ -238,7 +238,7 @@ void readEncoders()
   enc2_old = enc2;
 }
 
-int PD_Motor(int targetM1, int targetM2)
+void PD_Motor(int targetM1, int targetM2)
 {
   // Encoder 1
   errorP_m1 = targetM1 - enc1_ticksPerCycle;
@@ -255,6 +255,23 @@ int PD_Motor(int targetM1, int targetM2)
   //Adjust motors
   m1Speed += totalError_m1;
   m2Speed += totalError_m2;
+
+  if (m1Speed > 75)
+  {
+    m1Speed = 75;
+  }
+  if (m1Speed < -75)
+  {
+    m1Speed = -75;
+  }
+  if (m2Speed > 75)
+  {
+    m2Speed = 75;
+  }
+  if (m2Speed < -75)
+  {
+    m2Speed = -75;
+  }
   
   setMotorPower(m1Forward, m1Reverse, m1Speed);
   setMotorPower(m2Forward, m2Reverse, m2Speed);
@@ -285,7 +302,7 @@ void readIR()
 }
 
 // IR PD for going straight
-int PD_IR()
+void PD_IR()
 {  
   // If there are both walls
   if ((r2 > leftWallIR) && (r1 > rightWallIR))
@@ -316,9 +333,32 @@ int PD_IR()
   }
 
   totalError_IR = (P_IR * (float)errorP_IR) + (D_IR * (float)errorD_IR);
+
+  m1Speed -= totalError_IR;
+  m2Speed += totalError_IR;
+
+  if (m1Speed > 75)
+  {
+    m1Speed = 75;
+  }
+  if (m1Speed < -75)
+  {
+    m1Speed = -75;
+  }
+  if (m2Speed > 75)
+  {
+    m2Speed = 75;
+  }
+  if (m2Speed < -75)
+  {
+    m2Speed = -75;
+  }
+  
+  setMotorPower(m1Forward, m1Reverse, m1Speed);
+  setMotorPower(m2Forward, m2Reverse, m2Speed);
+  
   oldErrorP_IR = errorP_IR;
   
-  return totalError_IR;
 }
 
 void getSquaresTraveled()
