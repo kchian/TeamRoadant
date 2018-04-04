@@ -4,8 +4,7 @@
 void IR_Calibration();
 void setMotorPower(int, int, int);
 void readEncoders();
-void setRightMotorSpeed(int);
-void setLeftMotorSpeed(int);
+int PD_Motor();
 void readIR();
 int PD_IR();
 void getSquaresTraveled();
@@ -50,17 +49,29 @@ int r3;
 int r4;
 
 // PD IR variables
-int errorP;
-int errorD;
-int oldErrorP;
+int errorP_IR;
+int errorD_IR;
+int oldErrorP_IR;
 int leftMiddleValue;
 int rightMiddleValue;
 int leftWallIR;
 int rightWallIR;
 int rightLeftOffset;
-float totalError;
-float P = 1.0;
-float D = 0.5;
+float totalError_IR;
+float P_IR = 1.0;
+float D_IR = 0.5;
+
+// PD Motor variables
+int errorP_m1;
+int errorP_m2;
+int errorD_m1;
+int errorD_m2;
+int oldErrorP_m1;
+int oldErrorP_m2;
+float totalError_m1;
+float totalError_m2;
+float P_motor = 0.8; // Tuned
+float D_motor = 1.0; // Tuned
 
 // Encoder variables
 long enc1;
@@ -119,21 +130,11 @@ void loop()
 
   readEncoders();
 
-  setRightMotorSpeed(10);
-  setLeftMotorSpeed(-10);
-
   PD_IR();
+  PD_Motor(10, 10);
 
   getSquaresTraveled();
-
-  /**
-  while(squares >= 1)
-  {
-    setMotorPower(m1Forward, m1Reverse, 0);
-    setMotorPower(m2Forward, m2Reverse, 0);
-  }
-  **/
-
+  
   Serial.print("Right Reciever: ");
   Serial.println(r3);
   Serial.print("Front Right Reciever: ");
@@ -159,15 +160,24 @@ void loop()
   Serial.println();
   Serial.print("rightLeftOffset: ");
   Serial.println(rightLeftOffset);
-  Serial.print("errorP: ");
-  Serial.println(errorP);
-  Serial.print("errorD: ");
-  Serial.println(errorD);
-  Serial.print("PD Error: ");
-  Serial.println(totalError);
-  Serial.println();
-  Serial.print("Squares Traveled: ");
-  Serial.println(squares);
+  Serial.print("errorP_IR: ");
+  Serial.println(errorP_IR);
+  Serial.print("errorD_IR: ");
+  Serial.println(errorD_IR);
+  Serial.print("PD Error_IR: ");
+  Serial.println(totalError_IR);
+  Serial.print("errorP_m1: ");
+  Serial.println(errorP_m1);
+  Serial.print("errorP_m2: ");
+  Serial.println(errorP_m2);
+  Serial.print("errorD_m1: ");
+  Serial.println(errorD_m1);
+  Serial.print("errorD_m2: ");
+  Serial.println(errorD_m2);
+  Serial.print("PD Error_m1: ");
+  Serial.println(totalError_m1);
+  Serial.print("PD Error_m2: ");
+  Serial.println(totalError_m2);
   Serial.println();
   Serial.println();
   
@@ -228,34 +238,29 @@ void readEncoders()
   enc2_old = enc2;
 }
 
-void setRightMotorSpeed(int targetSpeed)
-{  
-  setMotorPower(m2Forward, m2Reverse, m2Speed);
-
-  // Proportional Adjustment  
-  if (enc2_ticksPerCycle < (targetSpeed - 1))
-  {
-    setMotorPower(m2Forward, m2Reverse, m2Speed++);
-  }
-  if (enc2_ticksPerCycle > (targetSpeed + 1))
-  {
-    setMotorPower(m2Forward, m2Reverse, m2Speed--);
-  }
-}
-
-void setLeftMotorSpeed(int targetSpeed)
+int PD_Motor(int targetM1, int targetM2)
 {
-  setMotorPower(m1Forward, m1Reverse, m1Speed);
+  // Encoder 1
+  errorP_m1 = targetM1 - enc1_ticksPerCycle;
+  errorD_m1 = errorP_m1 - oldErrorP_m1;
 
-  // Proportional Adjustment
-  if (enc1_ticksPerCycle < (targetSpeed - 1))
-  {
-    setMotorPower(m1Forward, m1Reverse, m1Speed++);
-  }
-  if (enc1_ticksPerCycle > (targetSpeed + 1))
-  {
-    setMotorPower(m1Forward, m1Reverse, m1Speed--);
-  }
+  // Encoder 2
+  errorP_m2 = targetM2 - enc2_ticksPerCycle;
+  errorD_m2 = errorP_m2 - oldErrorP_m2;
+
+  // Adding the proportional and derivative errors
+  totalError_m1= (P_motor * (float)errorP_m1) + (D_motor * (float)errorD_m1);
+  totalError_m2= (P_motor * (float)errorP_m2) + (D_motor * (float)errorD_m2);
+
+  //Adjust motors
+  m1Speed += totalError_m1;
+  m2Speed += totalError_m2;
+  
+  setMotorPower(m1Forward, m1Reverse, m1Speed);
+  setMotorPower(m2Forward, m2Reverse, m2Speed);
+  
+  oldErrorP_m1 = errorP_m1;
+  oldErrorP_m2 = errorP_m2;  
 }
 
 void readIR()
@@ -285,35 +290,35 @@ int PD_IR()
   // If there are both walls
   if ((r2 > leftWallIR) && (r1 > rightWallIR))
   {
-    errorP = r1 - r2 - rightLeftOffset;
-    errorD = errorP - oldErrorP;
+    errorP_IR = r1 - r2 - rightLeftOffset;
+    errorD_IR = errorP_IR - oldErrorP_IR;
   }
 
   // Only left wall
   else if (r2 > leftWallIR)
   {
-    errorP = 2 * (leftMiddleValue - r2);
-    errorD = errorP - oldErrorP;
+    errorP_IR = 2 * (leftMiddleValue - r2);
+    errorD_IR = errorP_IR - oldErrorP_IR;
   }
 
   // Only right wall
   else if (r1 > rightWallIR)
   {
-    errorP = 2 * (r1 - rightMiddleValue);
-    errorD = errorP - oldErrorP;
+    errorP_IR = 2 * (r1 - rightMiddleValue);
+    errorD_IR = errorP_IR - oldErrorP_IR;
   }
 
   // If no walls
   else if ((r2 < leftWallIR) && (r1 < rightWallIR))
   {
-    errorP = 0;
-    errorD = 0;
+    errorP_IR = 0;
+    errorD_IR = 0;
   }
 
-  totalError = (P * (float)errorP) + (D * (float)errorD);
-  oldErrorP = errorP;
+  totalError_IR = (P_IR * (float)errorP_IR) + (D_IR * (float)errorD_IR);
+  oldErrorP_IR = errorP_IR;
   
-  return totalError;
+  return totalError_IR;
 }
 
 void getSquaresTraveled()
