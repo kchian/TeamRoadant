@@ -7,6 +7,11 @@ void readEncoders();
 void PD_Motor();
 void readIR();
 void PD_IR();
+void isFrontWall();
+void isLeftWall();
+void isRightWall();
+void rightTurn();
+void leftTurn();
 void getSquaresTraveled();
 
 // Built-in led
@@ -58,8 +63,8 @@ int leftWallIR;
 int rightWallIR;
 int rightLeftOffset;
 float totalError_IR;
-float P_IR = 0.2; // Tuned
-float D_IR = 0.5; // Tuned
+const float P_IR = 0.2; // Tuned
+const float D_IR = 0.5; // Tuned
 
 // PD Motor variables
 int errorP_m1;
@@ -70,8 +75,8 @@ int oldErrorP_m1;
 int oldErrorP_m2;
 float totalError_m1;
 float totalError_m2;
-float P_motor = 0.6; // Tuned
-float D_motor = 0.6; // Tuned
+const float P_motor = 0.6; // Tuned
+const float D_motor = 0.6; // Tuned
 
 // Encoder variables
 long enc1;
@@ -88,6 +93,11 @@ int m2Speed = 30;
 // Travel Variables
 const double distancePerTick = 0.244346095279;
 int squares = 0;
+
+// Walls
+const int frontWallValue = 150; // Needs to be set during calibration somehow --> Ask Kevin
+int frontOffset;
+int frontEncAvg;
 
 void setup() 
 {
@@ -130,8 +140,14 @@ void loop()
 
   readEncoders();
 
+  /**
   PD_IR();
   PD_Motor(50, 50);
+  **/
+
+  leftTurn();
+
+  isFrontWall();
 
   getSquaresTraveled();
   
@@ -195,6 +211,8 @@ void IR_Calibration()
   
   r1 = analogRead(frontRightReciever);
   r2 = analogRead(frontLeftReciever);
+  r3 = analogRead(rightReciever);
+  r4 = analogRead(leftReciever);
 
   // Turn emmitters off
   digitalWrite(emit1, LOW);
@@ -207,6 +225,7 @@ void IR_Calibration()
   leftWallIR = r2 - 5;
   rightWallIR = r1 - 5;
   rightLeftOffset = r1 - r2;
+  frontOffset = r3 - r4;
 }
 
 void setMotorPower(int mForward, int mReverse, int pwr)
@@ -256,6 +275,7 @@ void PD_Motor(int targetM1, int targetM2)
   m1Speed += totalError_m1;
   m2Speed += totalError_m2;
 
+  // Prevents speed from getting too high
   if (m1Speed > 75)
   {
     m1Speed = 75;
@@ -332,11 +352,19 @@ void PD_IR()
     errorD_IR = 0;
   }
 
+  // If getting close to a front wall
+  if (frontEncAvg > frontWallValue)
+  {
+    errorP_IR = 0;
+    errorD_IR = 0;
+  }
+
   totalError_IR = (P_IR * (float)errorP_IR) + (D_IR * (float)errorD_IR);
 
   m1Speed -= totalError_IR;
   m2Speed += totalError_IR;
 
+  // Prevents speed from getting too high
   if (m1Speed > 75)
   {
     m1Speed = 75;
@@ -359,6 +387,56 @@ void PD_IR()
   
   oldErrorP_IR = errorP_IR;
   
+}
+
+void isFrontWall()
+{
+  frontEncAvg = (r3 + r4 + frontOffset) / 2;
+  if (frontEncAvg > frontWallValue)
+  {
+    setMotorPower(m1Forward, m1Reverse, 0);
+    setMotorPower(m2Forward, m2Reverse, 0);
+  }
+}
+
+void isLeftWall()
+{
+  
+}
+
+void isRightWall()
+{
+  
+}
+
+void rightTurn()
+{
+  enc1_old = encoder_m1.read();
+
+  while(encoder_m1.read() <= (enc1_old + 500))
+  {
+    PD_Motor(30, 0);
+  }
+
+  setMotorPower(m1Forward, m1Reverse, 0);
+  setMotorPower(m2Forward, m2Reverse, 0);
+
+  while(true);  // Remove this later
+}
+
+void leftTurn()
+{
+  enc2_old = encoder_m2.read();
+
+  while(encoder_m2.read() <= (enc2_old + 550))
+  {
+    PD_Motor(0, 30);
+  }
+
+  setMotorPower(m1Forward, m1Reverse, 0);
+  setMotorPower(m2Forward, m2Reverse, 0);
+
+  while(true);  // Remove this later
 }
 
 void getSquaresTraveled()
