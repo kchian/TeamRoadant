@@ -6,6 +6,12 @@
 # In[2]:
 
 
+from queue import Queue
+
+
+# In[3]:
+
+
 # 16x16 grid representing walls, 2D "bytearray"
 # Each cell is a binary integer: north, east, south, west represented in a bit
 # 0 represents a wall
@@ -20,7 +26,7 @@ WEST    = 0x8
 PRINT_SIZE = 13
 
 
-# In[3]:
+# In[4]:
 
 
 # # 16x16, mazes thanks to https://github.com/micromouseonline/micromouse-maze
@@ -56,7 +62,7 @@ print(len(physical_maze))
 print(physical_maze)
 
 
-# In[99]:
+# In[5]:
 
 
 def printMaze(maze,robot,n_weights=None,w_weights=None):
@@ -129,14 +135,14 @@ def printMaze(maze,robot,n_weights=None,w_weights=None):
         f.write('\n'.join([''.join(i) for i in maze_out])+'\n'+'#'*100+'\n')
 
 
-# In[100]:
+# In[6]:
 
 
 def search(row,col):
     return physical_maze[col*16+row]
 
 
-# In[101]:
+# In[7]:
 
 
 # Cell weight tracker
@@ -149,20 +155,20 @@ class Cell:
         return 'Cell:' + 'N: ' + str(self.north) + 'W: ' + str(self.west) + '   '
 
 
-# In[116]:
+# In[8]:
 
 
 class StopRecursion(BaseException):
     pass
 
 
-# In[117]:
+# In[9]:
 
 
 neighbor_pattern = [(0,1),(0,-1),(1,0),(-1,0)]
 
 
-# In[120]:
+# In[10]:
 
 
 class Mouse:
@@ -189,9 +195,11 @@ class Mouse:
             
     def neighbors(self,row,col):
         x = [(row+1,col), (row-1,col),(row,col+1),(row,col-1)]
-        return [i for i in x if i[0]<16 and i[1]<16]
+        return [i for i in x if i[0]<16 and i[1]<16 and i[0]>0 and i[1]>0]
     
     def set_weight(self, r,c, direction, value):
+        if r < 0 or r > 15 or c < 0 or c > 15:
+            return
         if direction == NORTH and (self.n_weights[r][c] == None or self.n_weights[r][c] > value):
             self.n_weights[r][c] = value
         if direction == WEST and (self.w_weights[r][c] == None or self.w_weights[r][c] > value):
@@ -200,80 +208,42 @@ class Mouse:
     def at_goal(self):
         return self.row in (7,8) and self.col in (7,8)
     
-    def floodfill_helper(self):
-        self.floodfill(0,0,0,self.edge)
-    
     #floodfill algorithm on the mouse memory
-    def floodfill(self,r,c,dist,edge):        
-        if (r,c) in self.visited:
-            return
-        self.visited += [(r,c)]
-        if not self.memory[r][c] & CHECKED:
-            return
-        printMaze(self.memory,Mouse(r,c,NORTH),self.n_weights,self.w_weights)        
+    #based on bfs
+    def floodfill(self): 
+        # TODO: delete this line, it's unnecessary
+        self.visited = []
+        
+        q = Queue()
+        # row, col, edge, dist
+        q.put((7,7,NORTH,0))
+        while not q.empty():
+            cur = q.get()
+            if cur[0] < 0 or cur[0] > 15 or cur[1] < 0 or cur[1] > 15                 or ((cur[0],cur[1],cur[2]) in self.visited)                 or self.memory[cur[0]][cur[1]] == 0                 or (self.memory[cur[0]][cur[1]] & cur[2]):
+                continue
+            printMaze(self.memory,Mouse(cur[0],cur[1],cur[2]),self.n_weights,self.w_weights)
+            self.visited.append((cur[0],cur[1],cur[2]))
+            if cur[2] in (NORTH,WEST):
+                self.set_weight(cur[0],cur[1],cur[2],cur[3])
+            print(cur[0],cur[1],cur[2],cur[3])
 
-        if edge == NORTH:
-            if not self.memory[r][c] & WEST:
-                self.set_weight(r,c,WEST,dist+.7)
-            if not self.memory[r][c] & NORTH:
-                self.set_weight(r,c,NORTH,dist+1)
-            if not self.memory[r][c] & EAST:
-                self.set_weight(r,c+1,WEST,dist+.7)
-            if not self.memory[r][c] & SOUTH:
-                self.set_weight(r-1,c,NORTH,dist)
-        if edge == WEST:
-            if not self.memory[r][c] & WEST:
-                self.set_weight(r,c,WEST,dist+1)
-            if not self.memory[r][c] & NORTH:
-                self.set_weight(r,c,NORTH,dist+.7)
-            if not self.memory[r][c] & EAST:
-                    self.set_weight(r,c+1,WEST,dist)
-            if not self.memory[r][c] & SOUTH:
-                    self.set_weight(r-1,c,NORTH,dist+.7)
-        if edge == EAST:
-            if not self.memory[r][c] & WEST:
-                self.set_weight(r,c,WEST,dist)
-            if not self.memory[r][c] & NORTH:
-                self.set_weight(r,c,NORTH,dist+.7)
-            if not self.memory[r][c] & EAST:
-                self.set_weight(r,c+1,WEST,dist+1)
-            if not self.memory[r][c] & SOUTH:
-                self.set_weight(r-1,c,NORTH,dist+.7)
-        if edge == SOUTH:
-            if not self.memory[r][c] & WEST:
-                self.set_weight(r,c,WEST,dist+.7)
-            if not self.memory[r][c] & NORTH:
-                self.set_weight(r,c,NORTH,dist)
-            if not self.memory[r][c] & EAST:
-                self.set_weight(r,c+1,WEST,dist+.7)
-            if not self.memory[r][c] & SOUTH:
-                self.set_weight(r-1,c,NORTH,dist+1)
-
-        for d in [NORTH,SOUTH,EAST,WEST]:
-
-            # if there is not a wall                
-            if not self.memory[r][c] & d:
-                #print(self.memory[r][c],d)
-                # have to reverse the direction: we're going from one cell to the next and thus the relative 
-                # edge changes as well
-                if (d in (NORTH,SOUTH) and edge in (EAST,WEST)) or (edge in (NORTH,SOUTH) and d in (EAST,WEST)):
-                    if d == NORTH and r < 15:
-                        self.floodfill(r+1,c,dist+.7,NORTH)
-                    elif d == SOUTH and r > 0:
-                        self.floodfill(r-1,c,dist+.7,SOUTH)
-                    elif d == EAST and c < 15:
-                        self.floodfill(r,c+1,dist+.7,EAST)
-                    elif d == WEST and c > 0:
-                        self.floodfill(r,c-1,dist+.7,WEST)
-                else: 
-                    if d == NORTH and r < 15:
-                        self.floodfill(r+1,c,dist+1,NORTH)
-                    elif d == SOUTH and r > 0:
-                        self.floodfill(r-1,c,dist+1,SOUTH)
-                    elif d == EAST and c < 15:
-                        self.floodfill(r,c+1,dist+1,EAST)
-                    elif d == WEST and c > 0:
-                        self.floodfill(r,c-1,dist+1,WEST)
+            if cur[2] == WEST:
+                if self.memory[cur[0]][cur[1]] & WEST == 0:
+                    q.put((cur[0],cur[1]-1,NORTH,cur[3]+.7))
+                    q.put((cur[0],cur[1]-1,WEST,cur[3]+1))
+                    q.put((cur[0]-1,cur[1]-1,NORTH,cur[3]+.7))
+                q.put((cur[0],cur[1],NORTH,cur[3]+.7))
+                q.put((cur[0],cur[1]+1,WEST,cur[3]+1))
+                q.put((cur[0]-1,cur[1],NORTH,cur[3]+.7))
+            if cur[2] == NORTH:
+                if self.memory[cur[0]][cur[1]] & NORTH == 0:
+                    q.put((cur[0]+1,cur[1],NORTH,cur[3]+1))
+                    q.put((cur[0]+1,cur[1],WEST,cur[3]+.7))
+                    q.put((cur[0]+1,cur[1]+1,WEST,cur[3]+.7))
+                q.put((cur[0]-1,cur[1],NORTH,cur[3]+1))
+                q.put((cur[0],cur[1],WEST,cur[3]+.7))
+                q.put((cur[0],cur[1]+1,WEST,cur[3]+.7))
+                
     
     
 #-----------------------------------------------------------------------------------------------
@@ -288,6 +258,7 @@ class Mouse:
             pass
     #edge here is the edge we start at
     def map(self,dist,edge):
+    # TODO DELETE DIST
         if self.at_goal() and not self.goal_found:
             self.goal_found = True
 #             self.old_n = list(self.n_weights)
@@ -392,15 +363,20 @@ class Mouse:
                             self.col += 1
 
 
-# In[121]:
+# In[11]:
 
 
 open('mazeiters','w+').close()
 m = Mouse(edge=NORTH)
 m.map_helper()
-printMaze(physical_maze,m,m.n_weights,m.w_weights)  
-#we might need a special case for where the mouse starts
-m.floodfill_helper()
-printMaze(physical_maze,m,m.n_weights,m.w_weights)  
+printMaze(m.memory,m,m.n_weights,m.w_weights)  
 
+
+
+# In[12]:
+
+
+#we might need a special case for where the mouse starts
+m.floodfill()
+printMaze(m.memory,m,m.n_weights,m.w_weights)  
 
