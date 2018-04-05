@@ -168,7 +168,7 @@ class StopRecursion(BaseException):
 neighbor_pattern = [(0,1),(0,-1),(1,0),(-1,0)]
 
 
-# In[88]:
+# In[94]:
 
 
 class Mouse:
@@ -261,7 +261,11 @@ class Mouse:
         prevlen = 0
         while len(next_node) != 0:
             
-            cur = next_node.pop() 
+            cur = next_node.pop()
+            while (self.row,self.col) != cur[1]:
+                i = history.pop()
+                self.row = i[0]
+                self.col = i[1]
             self.row,self.col = cur[0]
             if self.at_goal():
                 break
@@ -279,17 +283,13 @@ class Mouse:
                 dirs = [EAST,NORTH,WEST,SOUTH]
             for d in dirs:
                 if self.memory[self.row][self.col] & d==0:
-                    if d == WEST:
-                        if self.memory[self.row][self.col-1] & CHECKED == 0:
+                    if d == WEST and self.memory[self.row][self.col-1] & CHECKED == 0:
                             next_node.append(((self.row,self.col-1),(self.row,self.col)))
-                    if d == EAST:
-                        if self.memory[self.row][self.col+1] & CHECKED == 0:
+                    elif d == EAST and self.memory[self.row][self.col+1] & CHECKED == 0:
                             next_node.append(((self.row,self.col+1),(self.row,self.col)))
-                    if d == SOUTH:
-                        if self.memory[self.row-1][self.col] & CHECKED == 0:
+                    elif d == SOUTH and self.memory[self.row-1][self.col] & CHECKED == 0:
                             next_node.append(((self.row-1,self.col),(self.row,self.col)))
-                    if d == NORTH:
-                        if self.memory[self.row+1][self.col] & CHECKED == 0:
+                    elif d == NORTH and self.memory[self.row+1][self.col] & CHECKED == 0:
                             next_node.append(((self.row+1,self.col),(self.row,self.col)))
 
             if prevlen != len(next_node):
@@ -304,6 +304,10 @@ class Mouse:
         prevlen = 0
         while len(next_node) != 0:
             cur = next_node.pop() 
+            while (self.row,self.col) != cur[1]:
+                i = history.pop()
+                self.row = i[0]
+                self.col = i[1]
             self.row,self.col = cur[0]
             if self.row == 0 and self.col == 0:
                 break
@@ -312,17 +316,13 @@ class Mouse:
             prevlen = len(next_node)
             for d in [NORTH,EAST,SOUTH,WEST]:
                 if self.memory[self.row][self.col] & d==0:
-                    if d == WEST:
-                        if self.memory[self.row][self.col-1] & CHECKED == 0:
+                    if d == WEST and self.memory[self.row][self.col-1] & CHECKED == 0:
                             next_node.append(((self.row,self.col-1),(self.row,self.col)))
-                    if d == EAST:
-                        if self.memory[self.row][self.col+1] & CHECKED == 0:
+                    elif d == EAST and self.memory[self.row][self.col+1] & CHECKED == 0:
                             next_node.append(((self.row,self.col+1),(self.row,self.col)))
-                    if d == SOUTH:
-                        if self.memory[self.row-1][self.col] & CHECKED == 0:
+                    elif d == SOUTH and self.memory[self.row-1][self.col] & CHECKED == 0:
                             next_node.append(((self.row-1,self.col),(self.row,self.col)))
-                    if d == NORTH:
-                        if self.memory[self.row+1][self.col] & CHECKED == 0:
+                    elif d == NORTH and self.memory[self.row+1][self.col] & CHECKED == 0:
                             next_node.append(((self.row+1,self.col),(self.row,self.col)))
 
             if prevlen != len(next_node):
@@ -334,7 +334,7 @@ class Mouse:
             
 
 
-# In[89]:
+# In[95]:
 
 
 open('mazeiters','w+').close()
