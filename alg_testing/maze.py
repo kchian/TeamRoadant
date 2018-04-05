@@ -3,13 +3,13 @@
 
 # #### Python algorithm testing: for easy POC + debugging ###
 
-# In[2]:
+# In[10]:
 
 
 from queue import Queue
 
 
-# In[3]:
+# In[11]:
 
 
 # 16x16 grid representing walls, 2D "bytearray"
@@ -26,7 +26,7 @@ WEST    = 0x8
 PRINT_SIZE = 13
 
 
-# In[4]:
+# In[12]:
 
 
 # # 16x16, mazes thanks to https://github.com/micromouseonline/micromouse-maze
@@ -62,7 +62,7 @@ print(len(physical_maze))
 print(physical_maze)
 
 
-# In[5]:
+# In[13]:
 
 
 def printMaze(maze,robot,n_weights=None,w_weights=None):
@@ -135,14 +135,14 @@ def printMaze(maze,robot,n_weights=None,w_weights=None):
         f.write('\n'.join([''.join(i) for i in maze_out])+'\n'+'#'*100+'\n')
 
 
-# In[6]:
+# In[14]:
 
 
 def search(row,col):
     return physical_maze[col*16+row]
 
 
-# In[7]:
+# In[15]:
 
 
 # Cell weight tracker
@@ -155,20 +155,20 @@ class Cell:
         return 'Cell:' + 'N: ' + str(self.north) + 'W: ' + str(self.west) + '   '
 
 
-# In[8]:
+# In[16]:
 
 
 class StopRecursion(BaseException):
     pass
 
 
-# In[9]:
+# In[17]:
 
 
 neighbor_pattern = [(0,1),(0,-1),(1,0),(-1,0)]
 
 
-# In[10]:
+# In[88]:
 
 
 class Mouse:
@@ -186,12 +186,9 @@ class Mouse:
         self.w_weights = [[99999]*16 for i in range(16)]
         self.old_n = [[None]*16 for i in range(16)]
         self.old_w = [[None]*16 for i in range(16)]
-        self.old_memory = [[0]*16 for i in range(16)]
         self.goal_found = False
         self.path = []
         self.relative_path = []
-        self.merged = False
-        self.visited = []
             
     def neighbors(self,row,col):
         x = [(row+1,col), (row-1,col),(row,col+1),(row,col-1)]
@@ -212,20 +209,19 @@ class Mouse:
     #based on bfs
     def floodfill(self): 
         # TODO: delete this line, it's unnecessary
-        self.visited = []
+        visited = []
         
         q = Queue()
         # row, col, edge, dist
         q.put((7,7,NORTH,0))
         while not q.empty():
             cur = q.get()
-            if cur[0] < 0 or cur[0] > 15 or cur[1] < 0 or cur[1] > 15                 or ((cur[0],cur[1],cur[2]) in self.visited)                 or self.memory[cur[0]][cur[1]] == 0                 or (self.memory[cur[0]][cur[1]] & cur[2]):
+            if cur[0] < 0 or cur[0] > 15 or cur[1] < 0 or cur[1] > 15                 or ((cur[0],cur[1],cur[2]) in visited)                 or self.memory[cur[0]][cur[1]] == 0                 or (self.memory[cur[0]][cur[1]] & cur[2]):
                 continue
             printMaze(self.memory,Mouse(cur[0],cur[1],cur[2]),self.n_weights,self.w_weights)
-            self.visited.append((cur[0],cur[1],cur[2]))
+            visited.append((cur[0],cur[1],cur[2]))
             if cur[2] in (NORTH,WEST):
                 self.set_weight(cur[0],cur[1],cur[2],cur[3])
-            print(cur[0],cur[1],cur[2],cur[3])
 
             if cur[2] == WEST:
                 if self.memory[cur[0]][cur[1]] & WEST == 0:
@@ -253,117 +249,92 @@ class Mouse:
     
     def map_helper(self):
         try:
-            self.map(0,self.edge)
+            self.map(self.edge)
         except StopRecursion:
             pass
     #edge here is the edge we start at
-    def map(self,dist,edge):
-    # TODO DELETE DIST
-        if self.at_goal() and not self.goal_found:
-            self.goal_found = True
-#             self.old_n = list(self.n_weights)
-#             self.old_w = list(self.w_weights)
-            #reset memory to find home
-            self.n_weights = [[99999]*16 for i in range(16)]
-#             self.w_weights = [[99999]*16 for i in range(16)]
-            self.old_memory = list([list(i) for i in self.memory])
-            self.memory = [[0]*16 for i in range(16)]
-            self.map(0,edge)
-            return
-        #print(self.row,self.col)
-        
-        if self.goal_found and (self.row == 0 and self.col == 0):
-#                                 #or (edge != NORTH and self.row-1 == 0 and self.col == 0)
-#                                 #or (edge != WEST and self.row == 0 and self.col+1 == 0)):
-#             #There's a potential optimization here: when we're heading back home we should always 
-#             #go towards the bottom right corner of the maze: 0,0. This means that below in the recursive part,
-#             #the ordering could change...
-            if self.merged:
-                return            
-            for i in range(16):
-                for j in range(16):
-                    self.memory[i][j] = max(self.memory[i][j],self.old_memory[i][j])
-#             # merge memories for solving
-#             # this is the real maximum because the other one is 99999, aka infinite weighting
-#             maximum = min(self.n_weights[0][0],self.w_weights[0][0])
-#             printMaze(physical_maze,self,self.n_weights,self.w_weights)        
-
-#             for i in range(16):
-#                 for j in range(16):
-#                     if self.n_weights[i][j] != 99999 and maximum >= self.n_weights[i][j] :
-#                         self.n_weights[i][j] = min(maximum - self.n_weights[i][j], self.old_n[i][j])
-#                     else:
-#                         self.n_weights[i][j] = 99999
-#                     if self.w_weights[i][j] != 99999 and maximum >= self.w_weights[i][j]:
-#                         self.w_weights[i][j] = min(maximum - self.w_weights[i][j], self.old_w[i][j])
-#                     else:
-#                         self.n_weights[i][j] = 99999
-            self.merged = True
-            raise StopRecursion()
+    def map(self,edge):
+        history = []
+        next_node = []
+        # next node has its locations and the previous location
+        next_node.append(((0,0),(0,0)))
+        prevlen = 0
+        while len(next_node) != 0:
             
-        if self.memory[self.row][self.col] & CHECKED:
-#             if not self.memory[self.row][self.col] & WEST:
-#                 self.set_weight(self.row,self.col,WEST,dist+.7)
-#             if not self.memory[self.row][self.col] & NORTH:
-#                 self.set_weight(self.row,self.col,NORTH,dist+.7)
-            return
-        self.memory[self.row][self.col] = search(self.row,self.col) + CHECKED
-        printMaze(self.memory,self,self.n_weights,self.w_weights)        
+            cur = next_node.pop() 
+            self.row,self.col = cur[0]
+            if self.at_goal():
+                break
+            self.memory[self.row][self.col] = search(*cur[0]) + CHECKED
+            printMaze(self.memory,self,self.n_weights,self.w_weights)
+            prevlen = len(next_node)
+            
+            if self.row > 7 and self.col < 7:
+                dirs = [WEST,NORTH,EAST,SOUTH]
+            elif self.row < 7 and self.col < 7:
+                dirs = [WEST,SOUTH,EAST,NORTH]
+            elif self.row < 7 and self.col > 7:
+                dirs = [EAST,SOUTH,WEST,NORTH]
+            else:
+                dirs = [EAST,NORTH,WEST,SOUTH]
+            for d in dirs:
+                if self.memory[self.row][self.col] & d==0:
+                    if d == WEST:
+                        if self.memory[self.row][self.col-1] & CHECKED == 0:
+                            next_node.append(((self.row,self.col-1),(self.row,self.col)))
+                    if d == EAST:
+                        if self.memory[self.row][self.col+1] & CHECKED == 0:
+                            next_node.append(((self.row,self.col+1),(self.row,self.col)))
+                    if d == SOUTH:
+                        if self.memory[self.row-1][self.col] & CHECKED == 0:
+                            next_node.append(((self.row-1,self.col),(self.row,self.col)))
+                    if d == NORTH:
+                        if self.memory[self.row+1][self.col] & CHECKED == 0:
+                            next_node.append(((self.row+1,self.col),(self.row,self.col)))
 
+            if prevlen != len(next_node):
+                history.append(cur[0])
+        old_memory = list([list(i) for i in self.memory])
+        self.memory = [[0]*16 for i in range(16)]
         
-        for d in [NORTH,SOUTH,EAST,WEST]:
-            if self.merged:
-                return
-            # if there is not a wall                
-            if not self.memory[self.row][self.col] & d:
-                #print(self.memory[self.row][self.col],d)
-                # have to reverse the direction: we're going from one cell to the next and thus the relative 
-                # edge changes as well
-                if (d in (NORTH,SOUTH) and edge in (EAST,WEST)) or (edge in (NORTH,SOUTH) and d in (EAST,WEST)):
-                    if d == NORTH and self.row < 15:
-                        self.row += 1
-                        self.map(dist+.7,NORTH)
-                        if not self.merged:
-                            self.row -= 1
-                    elif d == SOUTH and self.row > 0:
-                        self.row -= 1
-                        self.map(dist+.7,SOUTH)
-                        if not self.merged:
-                            self.row += 1
-                    elif d == EAST and self.col < 15:
-                        self.col +=1 
-                        self.map(dist+.7,EAST)
-                        if not self.merged:
-                            self.col -= 1
-                    elif d == WEST and self.col > 0:
-                        self.col -= 1
-                        self.map(dist+.7,WEST)
-                        if not self.merged:
-                            self.col += 1
-                else: 
-                    if d == NORTH and self.row < 15:
-                        self.row += 1
-                        self.map(dist+1,NORTH)
-                        if not self.merged:
-                            self.row -= 1
-                    elif d == SOUTH and self.row > 0:
-                        self.row -= 1
-                        self.map(dist+1,SOUTH)
-                        if not self.merged:
-                            self.row += 1
-                    elif d == EAST and self.col < 15:
-                        self.col += 1
-                        self.map(dist+1,EAST)
-                        if not self.merged:
-                            self.col -= 1
-                    elif d == WEST and self.col > 0:
-                        self.col -= 1
-                        self.map(dist+1,WEST)
-                        if not self.merged:
-                            self.col += 1
+        history = []
+        next_node = []
+        # next node has its locations and the previous location
+        next_node.append(((7,7),(7,7)))
+        prevlen = 0
+        while len(next_node) != 0:
+            cur = next_node.pop() 
+            self.row,self.col = cur[0]
+            if self.row == 0 and self.col == 0:
+                break
+            self.memory[self.row][self.col] = search(*cur[0]) + CHECKED
+            printMaze(self.memory,self,self.n_weights,self.w_weights)
+            prevlen = len(next_node)
+            for d in [NORTH,EAST,SOUTH,WEST]:
+                if self.memory[self.row][self.col] & d==0:
+                    if d == WEST:
+                        if self.memory[self.row][self.col-1] & CHECKED == 0:
+                            next_node.append(((self.row,self.col-1),(self.row,self.col)))
+                    if d == EAST:
+                        if self.memory[self.row][self.col+1] & CHECKED == 0:
+                            next_node.append(((self.row,self.col+1),(self.row,self.col)))
+                    if d == SOUTH:
+                        if self.memory[self.row-1][self.col] & CHECKED == 0:
+                            next_node.append(((self.row-1,self.col),(self.row,self.col)))
+                    if d == NORTH:
+                        if self.memory[self.row+1][self.col] & CHECKED == 0:
+                            next_node.append(((self.row+1,self.col),(self.row,self.col)))
+
+            if prevlen != len(next_node):
+                history.append(cur[0])
+
+        for i in range(16):
+            for j in range(16):
+                self.memory[i][j] = max(self.memory[i][j],old_memory[i][j])     
+            
 
 
-# In[11]:
+# In[89]:
 
 
 open('mazeiters','w+').close()
@@ -373,7 +344,7 @@ printMaze(m.memory,m,m.n_weights,m.w_weights)
 
 
 
-# In[12]:
+# In[20]:
 
 
 #we might need a special case for where the mouse starts
