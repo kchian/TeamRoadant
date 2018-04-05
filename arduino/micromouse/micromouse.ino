@@ -1,3 +1,5 @@
+#include <QueueList.h>
+
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
 
