@@ -1,7 +1,32 @@
-#include <QueueList.h>
-
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
+
+// Built-in led
+#define LED 13
+
+// Motor PWM pins
+#define M1FORWARD 4
+#define M1REVERSE 3
+#define M2FORWARD 5
+#define M2REVERSE 6
+
+// Encoder digital pins
+#define ENCODER_M1_A 9
+#define ENCODER_M1_B 10
+#define ENCODER_M2_A 12
+#define ENCODER_M2_B 11
+
+// Emitter digital pins
+#define EMIT1 23
+#define EMIT2 22
+#define EMIT3 21
+#define EMIT4 20
+
+// Reciever analog pins
+#define FRONT_LEFT_RECIEVER 18
+#define LEFT_RECIEVER 19
+#define FRONT_RIGHT_RECIEVER 17
+#define RIGHT_RECIEVER 16
 
 void IR_Calibration();
 void setMotorPower(int, int, int);
@@ -16,38 +41,9 @@ void rightTurn();
 void leftTurn();
 void getSquaresTraveled();
 
-// Built-in led
-const int led = 13;
-
-// Motor PWM pins
-const int m1Forward = 4;
-const int m1Reverse = 3;
-const int m2Forward = 5;
-const int m2Reverse = 6;
-
-// Encoder digital pins
-const int encoder_m1_A = 9;
-const int encoder_m1_B = 10;
-const int encoder_m2_A = 12;
-const int encoder_m2_B = 11;
-
 // Encoder objects
-Encoder encoder_m1(encoder_m1_A, encoder_m1_B);
-Encoder encoder_m2(encoder_m2_A, encoder_m2_B);
-
-// Emitter digital pins
-const int emitters[4]={23,22,21,20};
-const int emit1 = 23;
-const int emit2 = 22;
-const int emit3 = 21;
-const int emit4 = 20;
-
-// frontRightRecieverer analog pins
-const int receivers[4]={19,18,17,16};
-const int frontLeftReciever = 18;
-const int leftReciever = 19;
-const int frontRightReciever = 17;
-const int rightReciever = 16;
+Encoder encoder_m1(ENCODER_M1_A, ENCODER_M1_B);
+Encoder encoder_m2(ENCODER_M2_A, ENCODER_M2_B);
 
 // IR Reciever variables
 int r1;
@@ -97,35 +93,35 @@ const double distancePerTick = 0.244346095279;
 int squares = 0;
 
 // Walls
-const int frontWallValue = 150; // Needs to be set during calibration somehow --> Ask Kevin
+int frontWallValue = 150; // Needs to be set during calibration somehow --> Ask Kevin
 int frontOffset;
 int frontEncAvg;
 
 void setup() 
 {
   // Built-in led
-  pinMode(led, OUTPUT);
+  pinMode(LED, OUTPUT);
   
   // Motor pin setup
-  pinMode(m1Forward, OUTPUT);
-  pinMode(m1Reverse, OUTPUT);
-  pinMode(m2Forward, OUTPUT);
-  pinMode(m2Reverse, OUTPUT);
+  pinMode(M1FORWARD, OUTPUT);
+  pinMode(M1REVERSE, OUTPUT);
+  pinMode(M2FORWARD, OUTPUT);
+  pinMode(M2REVERSE, OUTPUT);
 
   // Emitter pin setup
-  pinMode(emit1, OUTPUT);
-  pinMode(emit2, OUTPUT);
-  pinMode(emit3, OUTPUT);
-  pinMode(emit4, OUTPUT);
+  pinMode(EMIT1, OUTPUT);
+  pinMode(EMIT2, OUTPUT);
+  pinMode(EMIT3, OUTPUT);
+  pinMode(EMIT4, OUTPUT);
 
-  // frontRightRecieverer pin setup
-  pinMode(frontLeftReciever, INPUT);
-  pinMode(leftReciever, INPUT);
-  pinMode(frontRightReciever, INPUT); 
-  pinMode(rightReciever, INPUT);
+  // Reciever pin setup
+  pinMode(FRONT_LEFT_RECIEVER, INPUT);
+  pinMode(LEFT_RECIEVER, INPUT);
+  pinMode(FRONT_RIGHT_RECIEVER, INPUT); 
+  pinMode(RIGHT_RECIEVER, INPUT);
   
   // Turn on Teensy LED
-  digitalWrite(led, HIGH);
+  digitalWrite(LED, HIGH);
 
   // Serial Monitor
   Serial.begin(9600);
@@ -142,12 +138,8 @@ void loop()
 
   readEncoders();
 
-  /**
   PD_IR();
   PD_Motor(50, 50);
-  **/
-
-  leftTurn();
 
   isFrontWall();
 
@@ -206,21 +198,21 @@ void loop()
 void IR_Calibration()
 {
   // Turn emitters on
-  digitalWrite(emit1, HIGH);
-  digitalWrite(emit2, HIGH);
-  digitalWrite(emit3, HIGH);
-  digitalWrite(emit4, HIGH);
+  digitalWrite(EMIT1, HIGH);
+  digitalWrite(EMIT2, HIGH);
+  digitalWrite(EMIT3, HIGH);
+  digitalWrite(EMIT4, HIGH);
   
-  r1 = analogRead(frontRightReciever);
-  r2 = analogRead(frontLeftReciever);
-  r3 = analogRead(rightReciever);
-  r4 = analogRead(leftReciever);
+  r1 = analogRead(FRONT_RIGHT_RECIEVER);
+  r2 = analogRead(FRONT_LEFT_RECIEVER);
+  r3 = analogRead(RIGHT_RECIEVER);
+  r4 = analogRead(LEFT_RECIEVER);
 
-  // Turn emmitters off
-  digitalWrite(emit1, LOW);
-  digitalWrite(emit2, LOW);
-  digitalWrite(emit3, LOW);
-  digitalWrite(emit4, LOW);
+  // Turn emitters off
+  digitalWrite(EMIT1, LOW);
+  digitalWrite(EMIT2, LOW);
+  digitalWrite(EMIT3, LOW);
+  digitalWrite(EMIT4, LOW);
   
   leftMiddleValue = r2;
   rightMiddleValue = r1;
@@ -295,8 +287,8 @@ void PD_Motor(int targetM1, int targetM2)
     m2Speed = -75;
   }
   
-  setMotorPower(m1Forward, m1Reverse, m1Speed);
-  setMotorPower(m2Forward, m2Reverse, m2Speed);
+  setMotorPower(M1FORWARD, M1REVERSE, m1Speed);
+  setMotorPower(M2FORWARD, M2REVERSE, m2Speed);
   
   oldErrorP_m1 = errorP_m1;
   oldErrorP_m2 = errorP_m2;  
@@ -305,22 +297,22 @@ void PD_Motor(int targetM1, int targetM2)
 void readIR()
 {
   // Turn emitters on
-  digitalWrite(emit1, HIGH);
-  digitalWrite(emit2, HIGH);
-  digitalWrite(emit3, HIGH);
-  digitalWrite(emit4, HIGH);
+  digitalWrite(EMIT1, HIGH);
+  digitalWrite(EMIT2, HIGH);
+  digitalWrite(EMIT3, HIGH);
+  digitalWrite(EMIT4, HIGH);
 
   // Get emitter values
-  r1 = analogRead(frontRightReciever);
-  r2 = analogRead(frontLeftReciever);
-  r3 = analogRead(rightReciever);
-  r4 = analogRead(leftReciever);
+  r1 = analogRead(FRONT_RIGHT_RECIEVER);
+  r2 = analogRead(FRONT_LEFT_RECIEVER);
+  r3 = analogRead(RIGHT_RECIEVER);
+  r4 = analogRead(LEFT_RECIEVER);
 
   // Turn emmitters off
-  digitalWrite(emit1, LOW);
-  digitalWrite(emit2, LOW);
-  digitalWrite(emit3, LOW);
-  digitalWrite(emit4, LOW);
+  digitalWrite(EMIT1, LOW);
+  digitalWrite(EMIT2, LOW);
+  digitalWrite(EMIT3, LOW);
+  digitalWrite(EMIT4, LOW);
 }
 
 // IR PD for going straight
@@ -384,8 +376,8 @@ void PD_IR()
     m2Speed = -75;
   }
   
-  setMotorPower(m1Forward, m1Reverse, m1Speed);
-  setMotorPower(m2Forward, m2Reverse, m2Speed);
+  setMotorPower(M1FORWARD, M1REVERSE, m1Speed);
+  setMotorPower(M2FORWARD, M2REVERSE, m2Speed);
   
   oldErrorP_IR = errorP_IR;
   
@@ -396,8 +388,8 @@ void isFrontWall()
   frontEncAvg = (r3 + r4 + frontOffset) / 2;
   if (frontEncAvg > frontWallValue)
   {
-    setMotorPower(m1Forward, m1Reverse, 0);
-    setMotorPower(m2Forward, m2Reverse, 0);
+    setMotorPower(M1FORWARD, M1REVERSE, 0);
+    setMotorPower(M2FORWARD, M2REVERSE, 0);
   }
 }
 
@@ -420,8 +412,8 @@ void rightTurn()
     PD_Motor(30, 0);
   }
 
-  setMotorPower(m1Forward, m1Reverse, 0);
-  setMotorPower(m2Forward, m2Reverse, 0);
+  setMotorPower(M1FORWARD, M1REVERSE, 0);
+  setMotorPower(M2FORWARD, M2REVERSE, 0);
 
   while(true);  // Remove this later
 }
@@ -435,8 +427,8 @@ void leftTurn()
     PD_Motor(0, 30);
   }
 
-  setMotorPower(m1Forward, m1Reverse, 0);
-  setMotorPower(m2Forward, m2Reverse, 0);
+  setMotorPower(M1FORWARD, M1REVERSE, 0);
+  setMotorPower(M2FORWARD, M2REVERSE, 0);
 
   while(true);  // Remove this later
 }
