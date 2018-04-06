@@ -75,7 +75,7 @@ int olderrorPM2;
 float totalErrorM1;
 float totalErrorM2;
 const float PMotor = 0.6; // Tuned
-const float DMotor = 0.6; // Tuned
+const float DMotor = 0.8; // Tuned
 
 // Encoder variables
 long enc1;
@@ -124,11 +124,12 @@ void setup()
   // Turn on Teensy LED
   digitalWrite(led, HIGH);
 
-  delay(1000);
+  delay(5000);
   
   // Serial Monitor  
   Serial.begin(9600);
   Serial.println("Micromouse: Team RoadAnt");
+  
 
   // Run calibration
   delay(5000);
@@ -139,13 +140,12 @@ void loop()
 {
   readIR();
 
-  readEncoders();
-
   IRPD();
   motorPD(30, 30);
 
   setMotorPower(m1Forward, m1Reverse, m1Power);
   setMotorPower(m2Forward, m2Reverse, m2Power);
+  
 
   isFrontWall();
   
@@ -216,9 +216,8 @@ void IRCalibration()
 
   delay(1000);
 
-  //reverse(500);
-  Serial.println("I REVERSED");
-
+  reverse(200);
+  
   delay(1000);
 
   readIR();
@@ -229,7 +228,7 @@ void IRCalibration()
   
   rightLeftOffset = rightMiddleValue - leftMiddleValue;
 
-  delay(5000);
+  delay(1000);
 }
 
 void setMotorPower(int mForward, int mReverse, int pwr)
@@ -237,13 +236,14 @@ void setMotorPower(int mForward, int mReverse, int pwr)
   if (pwr >= 0)
   {
     analogWrite(mForward, pwr);
-    digitalWrite(mReverse, LOW);
+    analogWrite(mReverse, 0);
+
   }
 
   if (pwr < 0)
   {
     analogWrite(mReverse, -pwr);
-    digitalWrite(mForward, LOW);
+    analogWrite(mForward, 0);
   }
 }
 
@@ -409,6 +409,9 @@ void turnRight()
   while(encoderM1.read() <= (enc1Old + 500))
   {
     motorPD(30, 0);
+    setMotorPower(m1Forward, m1Reverse, m1Power);
+    setMotorPower(m2Forward, m2Reverse, m2Power);
+    delay(50);
   }
 
   setMotorPower(m1Forward, m1Reverse, 0);
@@ -422,8 +425,9 @@ void turnLeft()
 
   while(encoderM2.read() <= (enc_old + 550))
   {
-    readEncoders();
     motorPD(0, 30);
+    setMotorPower(m1Forward, m1Reverse, m1Power);
+    setMotorPower(m2Forward, m2Reverse, m2Power);
     delay(50);
   }
 
@@ -438,11 +442,12 @@ void reverse(short ticks)
 
   while(encoderM1.read() >= (enc_old - ticks))
   {
-    readEncoders();
     motorPD(-30, -30);
+    setMotorPower(m1Forward, m1Reverse, m1Power);
+    setMotorPower(m2Forward, m2Reverse, m2Power);
     delay(50);
   }
-
+  
   setMotorPower(m1Forward, m1Reverse, 0);
   setMotorPower(m2Forward, m2Reverse, 0);
 
