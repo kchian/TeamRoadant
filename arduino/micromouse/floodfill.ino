@@ -46,7 +46,7 @@ void map();
 
 void setWeight(short r, short c, short direction, short value)
 {
-  if (r < 0 || r > 15 || c < 0 || c < 15)
+  if (r < 0 || r > 15 || c < 0 || c > 15)
   {
     return;
   }
@@ -62,7 +62,7 @@ void setWeight(short r, short c, short direction, short value)
 
 bool atGoal()
 {
-  if ((row == 7 || row == 8) && (col == 7 || row == 8))
+  if ((row == 7 || row == 8) && (col == 7 || col == 8))
   {
     return true;
   }
@@ -78,29 +78,35 @@ void floodfill()
 {
   //Each north is row*16 + col, and row*16 + col +1 is west
   char visited [512];
-
+  for (int i = 0; i < 512; i++)
+  {
+    visited[i] = 0;
+  }
   QueueList <Location> q;
   q.push(createLocation(7, 7, NORTH, 0));
+  q.push(createLocation(7, 8, NORTH, 0));
+  q.push(createLocation(8, 7, NORTH, 0));
+  q.push(createLocation(8, 8, NORTH, 0));
   while (!q.isEmpty())
   {
     Location cur = q.pop();
     // a bit ugly but also as pretty as it'll get
     // continues anything out of bounds, on a wall, or visited
-    if (cur.row < 0 || cur.row > 15 || cur.col < 0 || cur.col > 15 || memory[cur.row][cur.col] & cur.edge ||
-        (cur.edge == NORTH && visited[cur.row*16+cur.col]) || (cur.edge == WEST && visited[cur.row*16+cur.col+1]))
+    if (cur.row < 0 || cur.row > 15 || cur.col < 0 || cur.col > 15 || (memory[cur.row][cur.col]) == 0 ||
+        (cur.edge == NORTH && visited[(cur.col*16+cur.row)*2] != 0 ) || (cur.edge == WEST && visited[(cur.col*16+cur.row)*2+1] != 0 ))
     {
       continue;
     }
     setWeight(cur.row, cur.col, cur.edge, cur.dist);
     if (cur.edge == NORTH)
     {
-      visited[row*16+col] = 1;
+      visited[(cur.col*16+cur.row)*2] = 1;
     } else {
-      visited[row*16+col+1] = 1;
+      visited[(cur.col*16+cur.row)*2+1] = 1;
     }
     if (cur.edge == WEST)
     {
-      if (memory[cur.row][cur.col] & WEST == 0) {
+      if ((memory[cur.row][cur.col] & WEST) == 0) {
         q.push(createLocation(cur.row, cur.col - 1, NORTH, cur.dist + 7));
         q.push(createLocation(cur.row, cur.col - 1, WEST, cur.dist + 10));
         q.push(createLocation(cur.row - 1, cur.col - 1, NORTH, cur.dist + 7));
@@ -110,7 +116,7 @@ void floodfill()
       q.push(createLocation(cur.row - 1, cur.col, NORTH, cur.dist + 7));
     } else if (cur.edge == NORTH)
     {
-      if (memory[cur.row][cur.col] & NORTH == 0) {
+      if ((memory[cur.row][cur.col] & NORTH) == 0) {
         q.push(createLocation(cur.row + 1, cur.col, NORTH, cur.dist + 10));
         q.push(createLocation(cur.row + 1, cur.col, WEST, cur.dist + 7));
         q.push(createLocation(cur.row + 1, cur.col + 1, NORTH, cur.dist + 7));
@@ -154,10 +160,11 @@ void map() {
     //Actually move the mouse here
     row = cur.row1;
     col = cur.col1;
+    //memory[row][col] = here we detect the walls
+
     if (atGoal()) {
       break;
     }
-    //memory[row][col] = here we detect the walls
     prevLen = (short)nextNode.count();
 
     short dirs[4];
@@ -192,24 +199,24 @@ void map() {
 
     for (int i = 0; i < 4; i++)
     {
-      if (memory[row][col] & dirs[i]==0)
+      if ((memory[row][col] & dirs[i])==0)
       {
-        if ((dirs[i] == WEST) && (memory[row][col-1] & CELL_CHECKED == 0))
+        if ((dirs[i] == WEST) && ((memory[row][col-1] & CELL_CHECKED) == 0))
         {
           CurPrev x = {row, col-1, row, col};
           nextNode.push(x);
         }
-        else if ((dirs[i] == EAST) && (memory[row][col+1] & CELL_CHECKED == 0))
+        else if ((dirs[i] == EAST) && ((memory[row][col+1] & CELL_CHECKED) == 0))
         {
           CurPrev x = {row, col+1, row, col};
           nextNode.push(x);
         }
-        else if ((dirs[i] == SOUTH) && (memory[row-1][col] & CELL_CHECKED == 0))
+        else if ((dirs[i] == SOUTH) && ((memory[row-1][col] & CELL_CHECKED) == 0))
         {
           CurPrev x = {row-1, col, row, col};
           nextNode.push(x);
         }
-        else if ((dirs[i] == NORTH) && (memory[row+1][col] & CELL_CHECKED == 0))
+        else if ((dirs[i] == NORTH) && ((memory[row+1][col] & CELL_CHECKED) == 0))
         {
           CurPrev x = {row+1, col, row, col};
           nextNode.push(x);
@@ -225,9 +232,9 @@ void map() {
   short oldMemory[16][16];
   for (int i = 0; i < 16; i++)
   {
-    memcpy(&oldMemory[i],&memory[i],16);
     for (int j = 0; j < 16; j++)
     {
+      oldMemory[i][j] = memory[i,j];
       memory[i][j] = 0;
     }
   }
@@ -272,24 +279,24 @@ void map() {
     short dirs[4] = {NORTH,EAST,SOUTH,WEST};
     for (int i = 0; i < 4; i++)
     {
-      if (memory[row][col] & dirs[i]==0)
+      if ((memory[row][col] & dirs[i])==0)
       {
-        if ((dirs[i] == WEST) && (memory[row][col-1] & CELL_CHECKED == 0))
+        if ((dirs[i] == WEST) && ((memory[row][col-1] & CELL_CHECKED) == 0))
         {
           CurPrev x = {row, col-1, row, col};
           nextNode.push(x);
         }
-        else if ((dirs[i] == EAST) && (memory[row][col+1] & CELL_CHECKED == 0))
+        else if ((dirs[i] == EAST) && ((memory[row][col+1] & CELL_CHECKED) == 0))
         {
           CurPrev x = {row, col+1, row, col};
           nextNode.push(x);
         }
-        else if ((dirs[i] == SOUTH) && (memory[row-1][col] & CELL_CHECKED == 0))
+        else if ((dirs[i] == SOUTH) && ((memory[row-1][col] & CELL_CHECKED) == 0))
         {
           CurPrev x = {row-1, col, row, col};
           nextNode.push(x);
         }
-        else if ((dirs[i] == NORTH) && (memory[row+1][col] & CELL_CHECKED == 0))
+        else if ((dirs[i] == NORTH) && ((memory[row+1][col] & CELL_CHECKED) == 0))
         {
           CurPrev x = {row+1, col, row, col};
           nextNode.push(x);
