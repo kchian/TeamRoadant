@@ -3,13 +3,13 @@
 
 # #### Python algorithm testing: for easy POC + debugging ###
 
-# In[1]:
+# In[66]:
 
 
 from queue import Queue
 
 
-# In[2]:
+# In[67]:
 
 
 # 16x16 grid representing walls, 2D "bytearray"
@@ -26,7 +26,7 @@ WEST    = 0x8
 PRINT_SIZE = 13
 
 
-# In[19]:
+# In[68]:
 
 
 # # 16x16, mazes thanks to https://github.com/micromouseonline/micromouse-maze
@@ -52,7 +52,7 @@ PRINT_SIZE = 13
 physical_maze = [0 for i in range(256)]
 # raw_maze = ''
 # Assumes valid maze file....
-with open('apec2014.maz','rb') as f:
+with open('japan-2011-finals.maz','rb') as f:
     ind = 0
     for line in f:
         for char in line:
@@ -62,7 +62,7 @@ print(len(physical_maze))
 print(physical_maze)
 
 
-# In[20]:
+# In[69]:
 
 
 def printMaze(maze,robot,n_weights=None,w_weights=None):
@@ -135,14 +135,14 @@ def printMaze(maze,robot,n_weights=None,w_weights=None):
         f.write('\n'.join([''.join(i) for i in maze_out])+'\n'+'#'*100+'\n')
 
 
-# In[21]:
+# In[70]:
 
 
 def search(row,col):
     return physical_maze[col*16+row]
 
 
-# In[22]:
+# In[71]:
 
 
 # Cell weight tracker
@@ -155,13 +155,13 @@ class Cell:
         return 'Cell:' + 'N: ' + str(self.north) + 'W: ' + str(self.west) + '   '
 
 
-# In[23]:
+# In[72]:
 
 
 neighbor_pattern = [(0,1),(0,-1),(1,0),(-1,0)]
 
 
-# In[60]:
+# In[191]:
 
 
 class Mouse:
@@ -213,8 +213,7 @@ class Mouse:
                 continue
             printMaze(self.memory,Mouse(cur[0],cur[1],cur[2]),self.n_weights,self.w_weights)
             visited.append((cur[0],cur[1],cur[2]))
-            if cur[2] in (NORTH,WEST):
-                self.set_weight(cur[0],cur[1],cur[2],cur[3])
+            self.set_weight(cur[0],cur[1],cur[2],cur[3])
 
             if cur[2] == WEST:
                 if self.memory[cur[0]][cur[1]] & WEST == 0:
@@ -344,11 +343,117 @@ class Mouse:
 
         for i in range(16):
             for j in range(16):
-                self.memory[i][j] = max(self.memory[i][j],old_memory[i][j])     
+                self.memory[i][j] = max(self.memory[i][j],old_memory[i][j])   
+                
+    def get_dir_value(self,x):
+        if x == NORTH:
+            return 0
+        elif x & NORTH and x & EAST:
+            return 45
+        elif x == EAST:
+            return 90
+        elif x & SOUTH and x & EAST:
+            return 135
+        elif x == SOUTH:
+            return 180
+        elif x & SOUTH and x & WEST:
+            return -135
+        elif x == WEST:
+            return -90
+        return -45
+        
+    def create_path(self):
+        # can just be struct of command (turning (0,1), value (if turning, angle, if not, dist)
+        q = []
+        e = NORTH
+        d = 0
+        r = 0
+        c = 0
+        cur_dist = 0
+        old = False
+        dist_delta = 0.707
+        while not (r in (7,8) and c in (7,8)):
+            #Implies that a component of the direction is NORTH
+            #Also implies it's not inside a wall..
+        
+            if e == NORTH:
+                if (self.memory[r+1][c] & NORTH) == 0 and self.n_weights[r+1][c] < self.w_weights[r+1][c] and self.n_weights[r+1][c] < self.w_weights[r+1][c+1]:
+                    angle = self.get_dir_value(NORTH)-d
+                    d = self.get_dir_value(NORTH)
+                    dist_delta = 1
+                elif (self.memory[r+1][c] & EAST) == 0 and self.w_weights[r+1][c] > self.w_weights[r+1][c+1]:
+                    angle = self.get_dir_value(NORTH+EAST)-d
+                    dist_delta = 0.707
+                    e = EAST
+                    d = self.get_dir_value(NORTH+EAST)
+                # this can be an else because this is the last option if floodfill worked correctly
+                else:
+                    angle = self.get_dir_value(NORTH+WEST)-d
+                    dist_delta = 0.707
+                    e = WEST
+                    d = self.get_dir_value(NORTH+WEST)
+                r += 1
+            elif e == WEST:
+                if (self.memory[r][c-1] & WEST) == 0 and self.w_weights[r][c-1] < self.n_weights[r][c-1] and self.w_weights[r][c-1] < self.n_weights[r-1][c-1]:
+                    angle = self.get_dir_value(WEST)-d 
+                    d = self.get_dir_value(WEST)
+                    dist_delta = 1
+                elif (self.memory[r][c-1] & NORTH) == 0 and self.n_weights[r][c-1] < self.n_weights[r-1][c-1]:
+                    angle = self.get_dir_value(NORTH+WEST)-d
+                    dist_delta = 0.707
+                    e = NORTH
+                    d = self.get_dir_value(NORTH+WEST)
+                else:
+                    angle = self.get_dir_value(SOUTH+WEST)-d
+                    dist_delta = 0.707
+                    e = SOUTH
+                    d = self.get_dir_value(SOUTH+WEST)
+                c -= 1
+            elif e == SOUTH:
+                if (self.memory[r-1][c] & SOUTH) == 0 and self.n_weights[r-2][c] < self.w_weights[r-1][c] and self.n_weights[r-2][c] < self.w_weights[r-1][c+1]:
+                    angle = self.get_dir_value(SOUTH) -d
+                    d = self.get_dir_value(SOUTH)
+                    dist_delta = 1
+                elif (self.memory[r-1][c] & EAST) == 0 and self.w_weights[r-1][c+1] < self.w_weights[r-1][c]:
+                    angle = self.get_dir_value(SOUTH+EAST)-d
+                    dist_delta = 0.707
+                    e = EAST
+                    d = self.get_dir_value(SOUTH+EAST)
+                else:
+                    angle = self.get_dir_value(SOUTH+WEST)-d
+                    dist_delta = 0.707
+                    e = WEST
+                    d = self.get_dir_value(SOUTH+WEST)
+                r -= 1
+            elif e == EAST:
+                if (self.memory[r][c+1] & EAST) == 0 and self.w_weights[r][c+2] < self.n_weights[r][c+1] and self.w_weights[r][c+2] < self.n_weights[r-1][c+1]:
+                    angle = self.get_dir_value(EAST) -d
+                    d = self.get_dir_value(EAST)
+                    dist_delta = 1
+                elif (self.memory[r][c+1] & NORTH) == 0 and self.n_weights[r][c+1] < self.n_weights[r-1][c+1]:
+                    angle = self.get_dir_value(NORTH+EAST)-d
+                    dist_delta = 0.707
+                    e = NORTH
+                    d = self.get_dir_value(EAST+NORTH)
+                else:
+                    angle = self.get_dir_value(SOUTH+EAST)-d
+                    dist_delta = 0.707
+                    e = SOUTH
+                    d = self.get_dir_value(SOUTH+EAST)
+                c += 1
+                
+                
+            cur_dist += dist_delta
+            if angle != 0:
+                q.append((1,angle))
+            q.append((0, cur_dist))
+            cur_dist = 0
+            print(q)
+                
             
 
 
-# In[61]:
+# In[192]:
 
 
 open('mazeiters','w+').close()
@@ -358,10 +463,25 @@ printMaze(m.memory,m,m.n_weights,m.w_weights)
 
 
 
-# In[62]:
+# In[193]:
 
 
 #we might need a special case for where the mouse starts
 m.floodfill()
 printMaze(m.memory,m,m.n_weights,m.w_weights)  
+
+
+# In[194]:
+
+
+for i in m.memory:
+    for j in i:
+        print(str(j)+' ',end='')
+    print()
+
+
+# In[195]:
+
+
+m.create_path()
 
