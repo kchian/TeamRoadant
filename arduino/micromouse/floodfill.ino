@@ -1,43 +1,3 @@
-#define CELL_CHECKED 16
-#define NORTH 0x1
-#define EAST 0x2
-#define SOUTH 0x4
-#define WEST 0x8
-
-#define SHORT_MAX 32767
-short row;
-short col;
-short edge;
-//short dir;  Use with pathing later
-
-short memory[16][16];
-short nWeights[16][16];  // init this
-short wWeights[16][16];  // init this
-bool goal_found = false;
-
-struct location
-{
-  short row;
-  short col;
-  short edge;
-  short dist;
-};
-struct node
-{
-  short row;
-  short col;
-};
-struct curPrev
-{
-  short row1;
-  short col1;
-  short row2;
-  short col2;
-};
-
-typedef struct location Location;
-typedef struct node Node;
-typedef struct curPrev CurPrev;
 
 Location createLocation(short r, short c, short edge, short dist);
 void floodfill();
@@ -234,7 +194,7 @@ void map() {
   {
     for (int j = 0; j < 16; j++)
     {
-      oldMemory[i][j] = memory[i,j];
+      oldMemory[i][j] = memory[i][j];
       memory[i][j] = 0;
     }
   }
