@@ -4,18 +4,16 @@
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
 
-void IR_Calibration();
+void IRCalibration();
 void setMotorPower(int, int, int);
 void readEncoders();
-void PD_Motor();
+void motorPD();
 void readIR();
-void PD_IR();
+void IRPD();
 void isFrontWall();
-void isLeftWall();
-void isRightWall();
-void rightTurn();
-void leftTurn();
-void getSquaresTraveled();
+void turnRight();
+void turnLeft();
+void reverse();
 
 // Built-in led
 const int led = 13;
@@ -27,24 +25,22 @@ const int m2Forward = 5;
 const int m2Reverse = 6;
 
 // Encoder digital pins
-const int encoder_m1_A = 9;
-const int encoder_m1_B = 10;
-const int encoder_m2_A = 12;
-const int encoder_m2_B = 11;
+const int encoderM1A = 9;
+const int encoderM1B = 10;
+const int encoderM2A = 12;
+const int encoderM2B = 11;
 
 // Encoder objects
-Encoder encoder_m1(encoder_m1_A, encoder_m1_B);
-Encoder encoder_m2(encoder_m2_A, encoder_m2_B);
+Encoder encoderM1(encoderM1A, encoderM1B);
+Encoder encoderM2(encoderM2A, encoderM2B);
 
 // Emitter digital pins
-const int emitters[4]={23,22,21,20};
 const int emit1 = 23;
 const int emit2 = 22;
 const int emit3 = 21;
 const int emit4 = 20;
 
 // frontRightRecieverer analog pins
-const int receivers[4]={19,18,17,16};
 const int frontLeftReciever = 18;
 const int leftReciever = 19;
 const int frontRightReciever = 17;
@@ -57,57 +53,53 @@ int r3;
 int r4;
 
 // PD IR variables
-int errorP_IR;
-int errorD_IR;
-int oldErrorP_IR;
+int errorPIR;
+int errorDIR;
+int olderrorPIR;
 int leftMiddleValue;
 int rightMiddleValue;
-int leftWallIR;
-int rightWallIR;
+int leftWallValue;
+int rightWallValue;
 int rightLeftOffset;
-float totalError_IR;
-const float P_IR = 0.2; // Tuned
-const float D_IR = 0.5; // Tuned
+float totalErrorIR;
+const float PIR = 0.2; // Tuned
+const float DIR = 0.5; // Tuned
 
 // PD Motor variables
-int errorP_m1;
-int errorP_m2;
-int errorD_m1;
-int errorD_m2;
-int oldErrorP_m1;
-int oldErrorP_m2;
-float totalError_m1;
-float totalError_m2;
-const float P_motor = 0.6; // Tuned
-const float D_motor = 0.6; // Tuned
+int errorPM1;
+int errorPM2;
+int errorDM1;
+int errorDM2;
+int olderrorPM1;
+int olderrorPM2;
+float totalErrorM1;
+float totalErrorM2;
+const float PMotor = 0.6; // Tuned
+const float DMotor = 0.6; // Tuned
 
 // Encoder variables
 long enc1;
 long enc2;
-long enc1_old;
-long enc2_old;
-int enc1_ticksPerCycle;
-int enc2_ticksPerCycle;
+long enc1Old;
+long enc2Old;
+int enc1Speed;
+int enc2Speed;
 
 // Motor variables
-int m1Speed = 30;
-int m2Speed = 30;
+int m1Power = 30;
+int m2Power = 30;
 
 // Travel Variables
 const double distancePerTick = 0.244346095279;
 int squares = 0;
 
 // Walls
-const int frontWallValue = 150; // Needs to be set during calibration somehow --> Ask Kevin
+int frontWallValue; // Needs to be set during calibration somehow --> Ask Kevin
 int frontOffset;
 int frontEncAvg;
 
 void setup() 
 {
-
-  
-
-  
   // Built-in led
   pinMode(led, OUTPUT);
   
@@ -132,31 +124,30 @@ void setup()
   // Turn on Teensy LED
   digitalWrite(led, HIGH);
 
-  // Serial Monitor
+  delay(1000);
+  
+  // Serial Monitor  
   Serial.begin(9600);
-  Serial.println("Micromouse: Team Roadent");
+  Serial.println("Micromouse: Team RoadAnt");
 
   // Run calibration
   delay(5000);
-  IR_Calibration();
+  IRCalibration();
 }
 
 void loop()
-{  
+{
   readIR();
 
   readEncoders();
 
-  /**
-  PD_IR();
-  PD_Motor(50, 50);
-  **/
+  IRPD();
+  motorPD(30, 30);
 
-  leftTurn();
+  setMotorPower(m1Forward, m1Reverse, m1Power);
+  setMotorPower(m2Forward, m2Reverse, m2Power);
 
   isFrontWall();
-
-  getSquaresTraveled();
   
   Serial.print("Right Reciever: ");
   Serial.println(r3);
@@ -172,67 +163,73 @@ void loop()
   Serial.print("Left Encoder: ");
   Serial.println(enc1);
   Serial.print("Right Encoder Ticks per Cycle: ");
-  Serial.println(enc2_ticksPerCycle);
+  Serial.println(enc2Speed);
   Serial.print("Left Encoder Ticks per Cycle: ");
-  Serial.println(enc1_ticksPerCycle);
+  Serial.println(enc1Speed);
   Serial.println();
-  Serial.print("Right Motor Speed: ");
-  Serial.println(m2Speed);
-  Serial.print("Left Motor Speed: ");
-  Serial.println(m1Speed);
+  Serial.print("Right Motor Power: ");
+  Serial.println(m2Power);
+  Serial.print("Left Motor Power: ");
+  Serial.println(m1Power);
   Serial.println();
   Serial.print("rightLeftOffset: ");
   Serial.println(rightLeftOffset);
-  Serial.print("errorP_IR: ");
-  Serial.println(errorP_IR);
-  Serial.print("errorD_IR: ");
-  Serial.println(errorD_IR);
+  Serial.print("errorPIR: ");
+  Serial.println(errorPIR);
+  Serial.print("errorDIR: ");
+  Serial.println(errorDIR);
   Serial.print("PD Error_IR: ");
-  Serial.println(totalError_IR);
-  Serial.print("errorP_m1: ");
-  Serial.println(errorP_m1);
-  Serial.print("errorP_m2: ");
-  Serial.println(errorP_m2);
-  Serial.print("errorD_m1: ");
-  Serial.println(errorD_m1);
-  Serial.print("errorD_m2: ");
-  Serial.println(errorD_m2);
+  Serial.println(totalErrorIR);
+  Serial.print("errorPM1: ");
+  Serial.println(errorPM1);
+  Serial.print("errorPM2: ");
+  Serial.println(errorPM2);
+  Serial.print("errorDM1: ");
+  Serial.println(errorDM1);
+  Serial.print("errorDM2: ");
+  Serial.println(errorDM2);
   Serial.print("PD Error_m1: ");
-  Serial.println(totalError_m1);
+  Serial.println(totalErrorM1);
   Serial.print("PD Error_m2: ");
-  Serial.println(totalError_m2);
+  Serial.println(totalErrorM2);
   Serial.println();
   Serial.println();
   
   delay(50);
-
 }
 
-void IR_Calibration()
+void IRCalibration()
 {
-  // Turn emitters on
-  digitalWrite(emit1, HIGH);
-  digitalWrite(emit2, HIGH);
-  digitalWrite(emit3, HIGH);
-  digitalWrite(emit4, HIGH);
-  
-  r1 = analogRead(frontRightReciever);
-  r2 = analogRead(frontLeftReciever);
-  r3 = analogRead(rightReciever);
-  r4 = analogRead(leftReciever);
+  readIR();
 
-  // Turn emmitters off
-  digitalWrite(emit1, LOW);
-  digitalWrite(emit2, LOW);
-  digitalWrite(emit3, LOW);
-  digitalWrite(emit4, LOW);
-  
-  leftMiddleValue = r2;
-  rightMiddleValue = r1;
-  leftWallIR = r2 - 5;
-  rightWallIR = r1 - 5;
-  rightLeftOffset = r1 - r2;
+  // Calibrate the front IR
   frontOffset = r3 - r4;
+  frontWallValue = ((r3 + r4) / 2) - 5;
+
+  // Calibrate the right IR
+  rightMiddleValue = r1;
+  rightWallValue = r1 - 5;
+
+  delay(1000);
+  
+  turnLeft();
+
+  delay(1000);
+
+  //reverse(500);
+  Serial.println("I REVERSED");
+
+  delay(1000);
+
+  readIR();
+  
+  // Calibrate the left IR
+  leftMiddleValue = r2;
+  leftWallValue = r2 - 5;
+  
+  rightLeftOffset = rightMiddleValue - leftMiddleValue;
+
+  delay(5000);
 }
 
 void setMotorPower(int mForward, int mReverse, int pwr)
@@ -253,58 +250,57 @@ void setMotorPower(int mForward, int mReverse, int pwr)
 void readEncoders()
 {
   // Get Encoder Values
-  enc1 = encoder_m1.read();
-  enc2 = encoder_m2.read();
+  enc1 = encoderM1.read();
+  enc2 = encoderM2.read();
 
   // Calculate ticksPerCycle
-  enc1_ticksPerCycle = (enc1 - enc1_old);
-  enc2_ticksPerCycle = (enc2 - enc2_old);
+  enc1Speed = (enc1 - enc1Old);
+  enc2Speed = (enc2 - enc2Old);
 
-  enc1_old = enc1;
-  enc2_old = enc2;
+  enc1Old = enc1;
+  enc2Old = enc2;
 }
 
-void PD_Motor(int targetM1, int targetM2)
+void motorPD(int targetM1, int targetM2)
 {
+  readEncoders();
+  
   // Encoder 1
-  errorP_m1 = targetM1 - enc1_ticksPerCycle;
-  errorD_m1 = errorP_m1 - oldErrorP_m1;
+  errorPM1 = targetM1 - enc1Speed;
+  errorDM1 = errorPM1 - olderrorPM1;
 
   // Encoder 2
-  errorP_m2 = targetM2 - enc2_ticksPerCycle;
-  errorD_m2 = errorP_m2 - oldErrorP_m2;
+  errorPM2 = targetM2 - enc2Speed;
+  errorDM2 = errorPM2 - olderrorPM2;
 
   // Adding the proportional and derivative errors
-  totalError_m1= (P_motor * (float)errorP_m1) + (D_motor * (float)errorD_m1);
-  totalError_m2= (P_motor * (float)errorP_m2) + (D_motor * (float)errorD_m2);
+  totalErrorM1= (PMotor * (float)errorPM1) + (DMotor * (float)errorDM1);
+  totalErrorM2= (PMotor * (float)errorPM2) + (DMotor * (float)errorDM2);
 
   //Adjust motors
-  m1Speed += totalError_m1;
-  m2Speed += totalError_m2;
+  m1Power += totalErrorM1;
+  m2Power += totalErrorM2;
 
   // Prevents speed from getting too high
-  if (m1Speed > 75)
+  if (m1Power > 75)
   {
-    m1Speed = 75;
+    m1Power = 75;
   }
-  if (m1Speed < -75)
+  if (m1Power < -75)
   {
-    m1Speed = -75;
+    m1Power = -75;
   }
-  if (m2Speed > 75)
+  if (m2Power > 75)
   {
-    m2Speed = 75;
+    m2Power = 75;
   }
-  if (m2Speed < -75)
+  if (m2Power < -75)
   {
-    m2Speed = -75;
+    m2Power = -75;
   }
   
-  setMotorPower(m1Forward, m1Reverse, m1Speed);
-  setMotorPower(m2Forward, m2Reverse, m2Speed);
-  
-  oldErrorP_m1 = errorP_m1;
-  oldErrorP_m2 = errorP_m2;  
+  olderrorPM1 = errorPM1;
+  olderrorPM2 = errorPM2;  
 }
 
 void readIR()
@@ -329,70 +325,70 @@ void readIR()
 }
 
 // IR PD for going straight
-void PD_IR()
+void IRPD()
 {  
   // If there are both walls
-  if ((r2 > leftWallIR) && (r1 > rightWallIR))
+  if ((r2 > leftWallValue) && (r1 > rightWallValue))
   {
-    errorP_IR = r1 - r2 - rightLeftOffset;
-    errorD_IR = errorP_IR - oldErrorP_IR;
+    errorPIR = r1 - r2 - rightLeftOffset;
+    errorDIR = errorPIR - olderrorPIR;
   }
 
   // Only left wall
-  else if (r2 > leftWallIR)
+  else if (r2 > leftWallValue)
   {
-    errorP_IR = 2 * (leftMiddleValue - r2);
-    errorD_IR = errorP_IR - oldErrorP_IR;
+    errorPIR = 2 * (leftMiddleValue - r2);
+    errorDIR = errorPIR - olderrorPIR;
   }
 
   // Only right wall
-  else if (r1 > rightWallIR)
+  else if (r1 > rightWallValue)
   {
-    errorP_IR = 2 * (r1 - rightMiddleValue);
-    errorD_IR = errorP_IR - oldErrorP_IR;
+    errorPIR = 2 * (r1 - rightMiddleValue);
+    errorDIR = errorPIR - olderrorPIR;
   }
 
   // If no walls
-  else if ((r2 < leftWallIR) && (r1 < rightWallIR))
+  else if ((r2 < leftWallValue) && (r1 < rightWallValue))
   {
-    errorP_IR = 0;
-    errorD_IR = 0;
+    errorPIR = 0;
+    errorDIR = 0;
   }
 
   // If getting close to a front wall
   if (frontEncAvg > frontWallValue)
   {
-    errorP_IR = 0;
-    errorD_IR = 0;
+    errorPIR = 0;
+    errorDIR = 0;
   }
 
-  totalError_IR = (P_IR * (float)errorP_IR) + (D_IR * (float)errorD_IR);
+  totalErrorIR = (PIR * (float)errorPIR) + (DIR * (float)errorDIR);
 
-  m1Speed -= totalError_IR;
-  m2Speed += totalError_IR;
+  m1Power -= totalErrorIR;
+  m2Power += totalErrorIR;
 
   // Prevents speed from getting too high
-  if (m1Speed > 75)
+  if (m1Power > 75)
   {
-    m1Speed = 75;
+    m1Power = 75;
   }
-  if (m1Speed < -75)
+  if (m1Power < -75)
   {
-    m1Speed = -75;
+    m1Power = -75;
   }
-  if (m2Speed > 75)
+  if (m2Power > 75)
   {
-    m2Speed = 75;
+    m2Power = 75;
   }
-  if (m2Speed < -75)
+  if (m2Power < -75)
   {
-    m2Speed = -75;
+    m2Power = -75;
   }
   
-  setMotorPower(m1Forward, m1Reverse, m1Speed);
-  setMotorPower(m2Forward, m2Reverse, m2Speed);
+  setMotorPower(m1Forward, m1Reverse, m1Power);
+  setMotorPower(m2Forward, m2Reverse, m2Power);
   
-  oldErrorP_IR = errorP_IR;
+  olderrorPIR = errorPIR;
   
 }
 
@@ -406,49 +402,48 @@ void isFrontWall()
   }
 }
 
-void isLeftWall()
+void turnRight()
 {
-  
-}
+  enc1Old = encoderM1.read();
 
-void isRightWall()
-{
-  
-}
-
-void rightTurn()
-{
-  enc1_old = encoder_m1.read();
-
-  while(encoder_m1.read() <= (enc1_old + 500))
+  while(encoderM1.read() <= (enc1Old + 500))
   {
-    PD_Motor(30, 0);
+    motorPD(30, 0);
   }
 
   setMotorPower(m1Forward, m1Reverse, 0);
   setMotorPower(m2Forward, m2Reverse, 0);
 
-  while(true);  // Remove this later
 }
 
-void leftTurn()
+void turnLeft()
 {
-  enc2_old = encoder_m2.read();
+  short enc_old = encoderM2.read();
 
-  while(encoder_m2.read() <= (enc2_old + 550))
+  while(encoderM2.read() <= (enc_old + 550))
   {
-    PD_Motor(0, 30);
+    readEncoders();
+    motorPD(0, 30);
+    delay(50);
   }
 
   setMotorPower(m1Forward, m1Reverse, 0);
   setMotorPower(m2Forward, m2Reverse, 0);
 
-  while(true);  // Remove this later
 }
 
-void getSquaresTraveled()
+void reverse(short ticks)
 {
-  float encAverage = ((float)(enc1 + enc2)) / 2.0;
-  squares = (int)((encAverage * distancePerTick) / 180.0);
-}
+  short enc_old = encoderM1.read();
 
+  while(encoderM1.read() >= (enc_old - ticks))
+  {
+    readEncoders();
+    motorPD(-30, -30);
+    delay(50);
+  }
+
+  setMotorPower(m1Forward, m1Reverse, 0);
+  setMotorPower(m2Forward, m2Reverse, 0);
+
+}
