@@ -18,13 +18,7 @@ namespace FloodFill
   short nWeights[16][16];  // init this
   short wWeights[16][16];  // init this
   bool goal_found = false;
-  
-  struct visit
-  {
-    short row;
-    short col;
-    short edge;
-  };
+
   struct location
   {
     short row;
@@ -45,8 +39,6 @@ namespace FloodFill
     short col2;
   };
   
-  
-  typedef struct visit Visit;
   typedef struct location Location;
   typedef struct node Node;
   typedef struct curPrev CurPrev;
@@ -76,22 +68,6 @@ namespace FloodFill
     return false;
   }
   
-  bool containsVisits(Visit v1, Visit* visited, short size)
-  {
-    for (short i = 0; i < size; i++)
-    {
-      if (v1.row ==  visited[i].row && v1.col == visited[i].col && v1.edge == visited[i].edge)
-      {
-        return true;
-      }
-    }
-    return false;
-  }
-  
-  Visit createVisit(short r, short c, short edge) {
-    Visit v = {r, c, edge};
-    return v;
-  }
   Location createLocation(short r, short c, short edge, short dist) {
     Location v = {r, c, edge, dist};
     return v;
@@ -99,28 +75,28 @@ namespace FloodFill
   
   void floodfill()
   {
-    Visit* visited = 0;
-    short visitedSize = 0;
-  
-    if (visited != 0)
-    {
-      delete [] visited;
-    }
-  
-    visited = new Visit[1];
+    //Each north is row*16 + col, and row*16 + col +1 is west
+    char visited [512];
   
     QueueList <Location> q;
     q.push(createLocation(7, 7, NORTH, 0));
     while (!q.isEmpty())
     {
       Location cur = q.pop();
-      Visit v{cur.row, cur.col, cur.edge};
-      if (cur.row < 0 || cur.row > 15 || cur.col < 0 || cur.col > 15 || containsVisits(v, visited, visitedSize) || memory[cur.row][cur.col] & cur.edge)
+      // a bit ugly but also as pretty as it'll get
+      // continues anything out of bounds, on a wall, or visited
+      if (cur.row < 0 || cur.row > 15 || cur.col < 0 || cur.col > 15 || memory[cur.row][cur.col] & cur.edge ||
+          (cur.edge == NORTH && visited[cur.row*16+cur.col]) || (cur.edge == WEST && visited[cur.row*16+cur.col+1]))
       {
         continue;
       }
-      visited[visitedSize++] = v;
       setWeight(cur.row, cur.col, cur.edge, cur.dist);
+      if (cur.edge == NORTH)
+      {
+        visited[row*16+col] = 1
+      } else {
+        visited[row*16+col+1] = 1
+      }
       if (cur.edge == WEST)
       {
         if (memory[cur.row][cur.col] & WEST == 0) {
@@ -143,7 +119,6 @@ namespace FloodFill
         q.push(createLocation(cur.row, cur.col + 1, NORTH, cur.dist + 7));
       }
     }
-    delete[] visited;
   }
 
   Node nodeCreator(short r,short c){

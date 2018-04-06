@@ -4,6 +4,8 @@
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
 
+using namespace FloodFill
+
 void IR_Calibration();
 void setMotorPower(int, int, int);
 void readEncoders();
@@ -104,6 +106,10 @@ int frontEncAvg;
 
 void setup() 
 {
+
+  
+
+  
   // Built-in led
   pinMode(led, OUTPUT);
   
