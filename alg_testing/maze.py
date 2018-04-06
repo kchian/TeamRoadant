@@ -3,13 +3,13 @@
 
 # #### Python algorithm testing: for easy POC + debugging ###
 
-# In[10]:
+# In[1]:
 
 
 from queue import Queue
 
 
-# In[11]:
+# In[2]:
 
 
 # 16x16 grid representing walls, 2D "bytearray"
@@ -26,7 +26,7 @@ WEST    = 0x8
 PRINT_SIZE = 13
 
 
-# In[12]:
+# In[19]:
 
 
 # # 16x16, mazes thanks to https://github.com/micromouseonline/micromouse-maze
@@ -52,7 +52,7 @@ PRINT_SIZE = 13
 physical_maze = [0 for i in range(256)]
 # raw_maze = ''
 # Assumes valid maze file....
-with open('japan-2011-finals.maz','rb') as f:
+with open('apec2014.maz','rb') as f:
     ind = 0
     for line in f:
         for char in line:
@@ -62,7 +62,7 @@ print(len(physical_maze))
 print(physical_maze)
 
 
-# In[13]:
+# In[20]:
 
 
 def printMaze(maze,robot,n_weights=None,w_weights=None):
@@ -135,14 +135,14 @@ def printMaze(maze,robot,n_weights=None,w_weights=None):
         f.write('\n'.join([''.join(i) for i in maze_out])+'\n'+'#'*100+'\n')
 
 
-# In[14]:
+# In[21]:
 
 
 def search(row,col):
     return physical_maze[col*16+row]
 
 
-# In[15]:
+# In[22]:
 
 
 # Cell weight tracker
@@ -155,20 +155,13 @@ class Cell:
         return 'Cell:' + 'N: ' + str(self.north) + 'W: ' + str(self.west) + '   '
 
 
-# In[16]:
-
-
-class StopRecursion(BaseException):
-    pass
-
-
-# In[17]:
+# In[23]:
 
 
 neighbor_pattern = [(0,1),(0,-1),(1,0),(-1,0)]
 
 
-# In[94]:
+# In[60]:
 
 
 class Mouse:
@@ -248,10 +241,7 @@ class Mouse:
     # So each edge has a distance, and we'll assume we start on the bottom edge...        
     
     def map_helper(self):
-        try:
-            self.map(self.edge)
-        except StopRecursion:
-            pass
+        self.map(self.edge)
     #edge here is the edge we start at
     def map(self,edge):
         history = []
@@ -260,12 +250,24 @@ class Mouse:
         next_node.append(((0,0),(0,0)))
         prevlen = 0
         while len(next_node) != 0:
-            
             cur = next_node.pop()
-            while (self.row,self.col) != cur[1]:
-                i = history.pop()
-                self.row = i[0]
-                self.col = i[1]
+#             print(next_node)
+#             print(history)
+#             print(cur[0])
+#             print(cur[1])
+#             print((self.row,self.col))
+#             print()
+            if (self.row,self.col) != cur[1]:
+                while (self.row,self.col) != cur[1]:
+                    i = history.pop()
+
+                    assert abs(self.row-i[0]) <= 1,'row failure'
+                    assert abs(self.col-i[1]) <= 1,'col failure'
+                    assert abs(self.row-i[0]) + abs(self.col-i[1]) < 2, 'moved diagonally or >1 square'
+                    self.row = i[0]
+                    self.col = i[1]
+                history.append((self.row,self.col))
+
             self.row,self.col = cur[0]
             if self.at_goal():
                 break
@@ -300,14 +302,26 @@ class Mouse:
         history = []
         next_node = []
         # next node has its locations and the previous location
-        next_node.append(((7,7),(7,7)))
+        next_node.append(((self.row,self.col),(self.row,self.col)))
         prevlen = 0
         while len(next_node) != 0:
             cur = next_node.pop() 
-            while (self.row,self.col) != cur[1]:
-                i = history.pop()
-                self.row = i[0]
-                self.col = i[1]
+#             print(next_node)
+#             print(history)
+#             print(cur[0])
+#             print(cur[1])
+#             print((self.row,self.col))
+#             print()
+            if (self.row,self.col) != cur[1]:
+                while (self.row,self.col) != cur[1]:
+                    i = history.pop()
+
+                    assert abs(self.row-i[0]) <= 1,'row failure'
+                    assert abs(self.col-i[1]) <= 1,'col failure'
+                    assert abs(self.row-i[0]) + abs(self.col-i[1]) < 2, 'moved diagonally or >1 square'
+                    self.row = i[0]
+                    self.col = i[1]
+                history.append((self.row,self.col))
             self.row,self.col = cur[0]
             if self.row == 0 and self.col == 0:
                 break
@@ -334,7 +348,7 @@ class Mouse:
             
 
 
-# In[95]:
+# In[61]:
 
 
 open('mazeiters','w+').close()
@@ -344,7 +358,7 @@ printMaze(m.memory,m,m.n_weights,m.w_weights)
 
 
 
-# In[20]:
+# In[62]:
 
 
 #we might need a special case for where the mouse starts
