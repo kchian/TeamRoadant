@@ -6,7 +6,8 @@
 
 #define SHORT_MAX 32767
 
-namespace
+//Using a namespace as a (hopefully temporary) workaround for the way Arduino tries to compile functions first
+namespace FloodFill
 {
   short row;
   short col;
@@ -14,8 +15,8 @@ namespace
   //short dir;  Use with pathing later
   
   short memory[16][16];
-  short n_weights[16][16];  // init this
-  short w_weights[16][16];  // init this
+  short nWeights[16][16];  // init this
+  short wWeights[16][16];  // init this
   bool goal_found = false;
   
   struct visit
@@ -58,11 +59,11 @@ namespace
     }
     if (direction == NORTH)
     {
-      n_weights[r][c] = value;
+      nWeights[r][c] = value;
     }
     if (direction == WEST)
     {
-      w_weights[r][c] = value;
+      wWeights[r][c] = value;
     }
   }
   
@@ -161,13 +162,18 @@ namespace
     while (!nextNode.isEmpty())
     {
       CurPrev cur = nextNode.pop();
-      while (row != cur.row2 or col != cur.col2)
-      {
-        Node i = history.pop();
-        row = i.row;
-        col = i.col;
-        //Actually move the mouse here
+      if (row != cur.row2 or col != cur.col2) {
+        while (row != cur.row2 or col != cur.col2)
+        {
+          Node i = history.pop();
+          row = i.row;
+          col = i.col;
+          //Actually move the mouse here
+        }
+        history.push(nodeCreator(row,col));
+
       }
+
       
       //Actually move the mouse here
       row = cur.row1;
@@ -260,19 +266,23 @@ namespace
       nextNode.pop();
     }
 
-    CurPrev center = {7,7,7,7};
+    CurPrev center = {self.row,self.col,self.row,self.col};
     nextNode.push(center);
 
     prevLen = 0;
     while (!nextNode.isEmpty())
     {
       CurPrev cur = nextNode.pop();
-      while (row != cur.row2 or col != cur.col2)
-      {
-        Node i = history.pop();
-        row = i.row;
-        col = i.col;
-        //Actually move the mouse here
+      if (row != cur.row2 or col != cur.col2) {
+        while (row != cur.row2 or col != cur.col2)
+        {
+          Node i = history.pop();
+          row = i.row;
+          col = i.col;
+          //Actually move the mouse here
+        }
+        history.push(nodeCreator(row,col));
+
       }
       
       //Actually move the mouse here
@@ -325,11 +335,22 @@ namespace
         }
       }
     }
-
-    
   }
-  
-
+  short getRow(){
+    return row;
+  }
+  short getCol(){
+    return col;
+  }
+  const short* getMemory(){
+    return memory;
+  }    
+  const short* getNWeights(){
+    return nWeights;
+  }
+  const short* getWWeights(){
+    return wWeights;
+  }
 }
 
 
