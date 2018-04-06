@@ -4,99 +4,156 @@
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
 
+// Flood fill vars
+#define CELL_CHECKED 16
+#define NORTH 0x1
+#define EAST 0x2
+#define SOUTH 0x4
+#define WEST 0x8
+
+#define SHORT_MAX 32767
+
+short row;
+short col;
+short edge;
+//short dir;  Use with pathing later
+
+short memory[16][16];
+short nWeights[16][16];  // init this
+short wWeights[16][16];  // init this
+bool goal_found = false;
+
+struct location
+{
+  short row;
+  short col;
+  short edge;
+  short dist;
+};
+struct node
+{
+  short row;
+  short col;
+};
+struct curPrev
+{
+  short row1;
+  short col1;
+  short row2;
+  short col2;
+};
+
+typedef struct location Location;
+typedef struct node Node;
+typedef struct curPrev CurPrev;
+
 void IRCalibration();
-void setMotorPower(int, int, int);
+void setMotorPower(short, short, short);
 void readEncoders();
 void motorPD();
+void encoderPD();
 void readIR();
 void IRPD();
 void isFrontWall();
-void turnRight();
-void turnLeft();
-void reverse();
+void turnRight(short);
+void turnLeft(short);
+void forward(short);
+void reverse(short);
+short getWalls();
 
 // Built-in led
-const int led = 13;
+const short led = 13;
 
 // Motor PWM pins
-const int m1Forward = 4;
-const int m1Reverse = 3;
-const int m2Forward = 5;
-const int m2Reverse = 6;
+const short m1Forward = 4;
+const short m1Reverse = 3;
+const short m2Forward = 5;
+const short m2Reverse = 6;
 
 // Encoder digital pins
-const int encoderM1A = 9;
-const int encoderM1B = 10;
-const int encoderM2A = 12;
-const int encoderM2B = 11;
+const short encoderM1A = 9;
+const short encoderM1B = 10;
+const short encoderM2A = 12;
+const short encoderM2B = 11;
 
 // Encoder objects
 Encoder encoderM1(encoderM1A, encoderM1B);
 Encoder encoderM2(encoderM2A, encoderM2B);
 
 // Emitter digital pins
-const int emit1 = 23;
-const int emit2 = 22;
-const int emit3 = 21;
-const int emit4 = 20;
+const short emit1 = 23;
+const short emit2 = 22;
+const short emit3 = 21;
+const short emit4 = 20;
 
 // frontRightRecieverer analog pins
-const int frontLeftReciever = 18;
-const int leftReciever = 19;
-const int frontRightReciever = 17;
-const int rightReciever = 16;
+const short frontLeftReciever = 18;
+const short leftReciever = 19;
+const short frontRightReciever = 17;
+const short rightReciever = 16;
 
 // IR Reciever variables
-int r1;
-int r2;
-int r3;
-int r4;
+short r1;
+short r2;
+short r3;
+short r4;
 
 // PD IR variables
-int errorPIR;
-int errorDIR;
-int olderrorPIR;
-int leftMiddleValue;
-int rightMiddleValue;
-int leftWallValue;
-int rightWallValue;
-int rightLeftOffset;
+short errorPIR;
+short errorDIR;
+short olderrorPIR;
+short leftMiddleValue;
+short rightMiddleValue;
+short leftWallValue;
+short rightWallValue;
+short rightLeftOffset;
 float totalErrorIR;
 const float PIR = 0.2; // Tuned
 const float DIR = 0.5; // Tuned
 
 // PD Motor variables
-int errorPM1;
-int errorPM2;
-int errorDM1;
-int errorDM2;
-int olderrorPM1;
-int olderrorPM2;
+short errorPM1;
+short errorPM2;
+short errorDM1;
+short errorDM2;
+short olderrorPM1;
+short olderrorPM2;
 float totalErrorM1;
 float totalErrorM2;
 const float PMotor = 0.6; // Tuned
 const float DMotor = 0.8; // Tuned
+
+// PD Encoder variables
+short errorEncoderP;
+short oldErrorEncoderP;
+short errorEncoderD;
+float totalErrorEncoder;
+const float PEncoder = 0.0;
+const float DEncoder = 0.0;
 
 // Encoder variables
 long enc1;
 long enc2;
 long enc1Old;
 long enc2Old;
-int enc1Speed;
-int enc2Speed;
+short enc1Speed;
+short enc2Speed;
 
 // Motor variables
-int m1Power = 30;
-int m2Power = 30;
+short m1Power = 30;
+short m2Power = 30;
 
 // Travel Variables
 const double distancePerTick = 0.244346095279;
-int squares = 0;
+short squares = 0;
 
 // Walls
-int frontWallValue; // Needs to be set during calibration somehow --> Ask Kevin
-int frontOffset;
-int frontEncAvg;
+short frontWallValue;
+short frontOffset;
+short frontEncAvg;
+
+// Orientation
+short dir = NORTH;
 
 void setup() 
 {
@@ -146,8 +203,10 @@ void loop()
   setMotorPower(m1Forward, m1Reverse, m1Power);
   setMotorPower(m2Forward, m2Reverse, m2Power);
   
-
   isFrontWall();
+
+  Serial.print("Walls: ");
+  Serial.println(getWalls());
   
   Serial.print("Right Reciever: ");
   Serial.println(r3);
@@ -212,7 +271,7 @@ void IRCalibration()
 
   delay(1000);
   
-  turnLeft();
+  turnLeft(500);
 
   delay(1000);
 
@@ -231,7 +290,7 @@ void IRCalibration()
   delay(1000);
 }
 
-void setMotorPower(int mForward, int mReverse, int pwr)
+void setMotorPower(short mForward, short mReverse, short pwr)
 {
   if (pwr >= 0)
   {
@@ -261,7 +320,7 @@ void readEncoders()
   enc2Old = enc2;
 }
 
-void motorPD(int targetM1, int targetM2)
+void motorPD(short targetM1, short targetM2)
 {
   readEncoders();
   
@@ -274,8 +333,8 @@ void motorPD(int targetM1, int targetM2)
   errorDM2 = errorPM2 - olderrorPM2;
 
   // Adding the proportional and derivative errors
-  totalErrorM1= (PMotor * (float)errorPM1) + (DMotor * (float)errorDM1);
-  totalErrorM2= (PMotor * (float)errorPM2) + (DMotor * (float)errorDM2);
+  totalErrorM1 = (PMotor * (float)errorPM1) + (DMotor * (float)errorDM1);
+  totalErrorM2 = (PMotor * (float)errorPM2) + (DMotor * (float)errorDM2);
 
   //Adjust motors
   m1Power += totalErrorM1;
@@ -301,6 +360,43 @@ void motorPD(int targetM1, int targetM2)
   
   olderrorPM1 = errorPM1;
   olderrorPM2 = errorPM2;  
+}
+
+void encoderPD(short enc1Old, short enc2Old)
+{
+  readEncoders();
+
+  short delta1 = enc1 - enc1Old;
+  short delta2 = enc2 - enc2Old;
+
+  errorEncoderP = delta2 - delta1;
+  errorEncoderD = errorEncoderP - oldErrorEncoderP;
+
+  totalErrorEncoder = (PEncoder * (float)errorEncoderP) + (DEncoder * (float)errorEncoderD);
+
+  // Adjust motor to match the other
+  m1Power += totalErrorEncoder;
+
+  // Prevents speed from getting too high
+  if (m1Power > 75)
+  {
+    m1Power = 75;
+  }
+  if (m1Power < -75)
+  {
+    m1Power = -75;
+  }
+  if (m2Power > 75)
+  {
+    m2Power = 75;
+  }
+  if (m2Power < -75)
+  {
+    m2Power = -75;
+  }
+
+  oldErrorEncoderP = errorEncoderP; 
+  
 }
 
 void readIR()
@@ -402,11 +498,12 @@ void isFrontWall()
   }
 }
 
-void turnRight()
+void turnRight(short ticks)
 {
+  // ticks: 500 = 90 degree, 250 = 45 degree
   enc1Old = encoderM1.read();
 
-  while(encoderM1.read() <= (enc1Old + 500))
+  while(encoderM1.read() <= (enc1Old + ticks))
   {
     motorPD(30, 0);
     setMotorPower(m1Forward, m1Reverse, m1Power);
@@ -417,13 +514,32 @@ void turnRight()
   setMotorPower(m1Forward, m1Reverse, 0);
   setMotorPower(m2Forward, m2Reverse, 0);
 
+  // Keep track of the orientation of the mouse
+  if (dir == NORTH)
+  {
+    dir = EAST;
+  }
+  else if (dir == EAST)
+  {
+    dir = SOUTH;
+  }
+  else if (dir == SOUTH)
+  {
+    dir = WEST;
+  }
+  else
+  {
+    dir = NORTH;
+  }
+
 }
 
-void turnLeft()
+void turnLeft(short ticks)
 {
+  // ticks: 500 = 90 degree, 250 = 45 degree
   short enc_old = encoderM2.read();
 
-  while(encoderM2.read() <= (enc_old + 550))
+  while(encoderM2.read() <= (enc_old + ticks))
   {
     motorPD(0, 30);
     setMotorPower(m1Forward, m1Reverse, m1Power);
@@ -433,6 +549,24 @@ void turnLeft()
 
   setMotorPower(m1Forward, m1Reverse, 0);
   setMotorPower(m2Forward, m2Reverse, 0);
+
+  // Keep track of the orientation of the mouse
+  if (dir == NORTH)
+  {
+    dir = WEST;
+  }
+  else if (dir == EAST)
+  {
+    dir = NORTH;
+  }
+  else if (dir == SOUTH)
+  {
+    dir = EAST;
+  }
+  else
+  {
+    dir = SOUTH;
+  }
 
 }
 
@@ -451,4 +585,92 @@ void reverse(short ticks)
   setMotorPower(m1Forward, m1Reverse, 0);
   setMotorPower(m2Forward, m2Reverse, 0);
 
+}
+
+void forward(short ticks)
+{
+  short enc1Old = encoderM1.read();
+  short enc2Old = encoderM2.read();
+
+  while(encoderM1.read() <= (enc1Old + ticks))
+  {
+    encoderPD(enc1Old, enc2Old);
+    motorPD(30, 30);
+    setMotorPower(m1Forward, m1Reverse, m1Power);
+    setMotorPower(m2Forward, m2Reverse, m2Power);
+    delay(50);
+  }
+  
+  setMotorPower(m1Forward, m1Reverse, 0);
+  setMotorPower(m2Forward, m2Reverse, 0);
+
+}
+
+short getWalls()
+{
+  short walls = 0x0;
+  frontEncAvg = (r3 + r4 + frontOffset) / 2;
+
+  if (dir == NORTH)
+  {
+    if (frontEncAvg > frontWallValue)
+    {
+      walls += NORTH;
+    }
+    if (r1 > rightWallValue)
+    {
+      walls += EAST;
+    }
+    if (r2 > leftWallValue)
+    {
+      walls += WEST;
+    }
+  }
+  else if (dir == EAST)
+  {
+    if (frontEncAvg > frontWallValue)
+    {
+      walls += EAST;
+    }
+    if (r1 > rightWallValue)
+    {
+      walls += SOUTH;
+    }
+    if (r2 > leftWallValue)
+    {
+      walls += NORTH;
+    }
+  }
+  else if (dir == SOUTH)
+  {
+    if (frontEncAvg > frontWallValue)
+    {
+      walls += SOUTH;
+    }
+    if (r1 > rightWallValue)
+    {
+      walls += WEST;
+    }
+    if (r2 > leftWallValue)
+    {
+      walls += EAST;
+    }
+  }
+  else
+  {
+    if (frontEncAvg > frontWallValue)
+    {
+      walls += WEST;
+    }
+    if (r1 > rightWallValue)
+    {
+      walls += NORTH;
+    }
+    if (r2 > leftWallValue)
+    {
+      walls += SOUTH;
+    }
+  }
+
+  return walls;
 }
