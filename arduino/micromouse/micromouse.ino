@@ -5,7 +5,7 @@
 #include <Encoder.h>
 
 #define RIGHTANGLE 370
-#define FORWARD 500//737
+#define FORWARD 400//737
 
 // Flood fill vars
 #define CELL_CHECKED 16
@@ -208,14 +208,17 @@ void loop()
 
   IRPD();
 
-  motorPD(60, 60);
+  //motorPD(60, 60);
+  forward(FORWARD, 40);
+
+  delay(2000);
 
   if (isFrontWall())
   {
     setMotorPower(m1Forward, m1Reverse, 0);
     setMotorPower(m2Forward, m2Reverse, 0);
-    //turnRight(RIGHTANGLE, 20, -20);
-    //delay(1000);
+    turnRight(RIGHTANGLE, 20, -20);
+    delay(2000);
   }
 //  
 //  if (isFrontWall())
