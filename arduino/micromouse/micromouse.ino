@@ -4,6 +4,9 @@
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
 
+#define RIGHTANGLE 370
+#define FORWARD 500//737
+
 // Flood fill vars
 #define CELL_CHECKED 16
 #define NORTH 0x1
@@ -12,6 +15,8 @@
 #define WEST 0x8
 
 #define SHORT_MAX 32767
+
+void map();
 
 short row;
 short col;
@@ -55,12 +60,13 @@ void encoderPD();
 void readIR();
 void IRPD();
 bool isFrontWall();
-void turnRight(short);
-void turnLeft(short);
-void forward(short);
-void reverse(short);
+void turnRight(short, short, short);
+void turnLeft(short, short, short);
+void forward(short, short, short);
+void reverse(short, short, short);
 short getWalls();
 void dirToTurn(short);
+void threadPD();
 
 // Built-in led
 const short led = 13;
@@ -109,7 +115,7 @@ short leftWallValue;
 short rightWallValue;
 short rightLeftOffset;
 float totalErrorIR;
-const float PIR = 0.2; // Tuned
+const float PIR = 0.1; // Tuned
 const float DIR = 0.5; // Tuned
 
 // PD Motor variables
@@ -121,8 +127,8 @@ short olderrorPM1;
 short olderrorPM2;
 float totalErrorM1;
 float totalErrorM2;
-const float PMotor = 0.6; // Tuned
-const float DMotor = 0.8; // Tuned
+const float PMotor = 0.1; // Tuned
+const float DMotor = 0.2; // Tuned
 
 // PD Encoder variables
 short errorEncoderP;
@@ -192,6 +198,8 @@ void setup()
   // Run calibration
   delay(5000);
   IRCalibration();
+
+  //map();
 }
 
 void loop()
@@ -199,52 +207,58 @@ void loop()
   readIR();
 
   IRPD();
-  motorPD(30, 30);
 
-  setMotorPower(m1Forward, m1Reverse, m1Power);
-  setMotorPower(m2Forward, m2Reverse, m2Power);
-  
+  motorPD(60, 60);
+
   if (isFrontWall())
   {
     setMotorPower(m1Forward, m1Reverse, 0);
     setMotorPower(m2Forward, m2Reverse, 0);
-    
-    if (dir == NORTH)
-    {
-      if (((~ getWalls()) & 0b0010) == 0b0010)
-      {
-        turnRight(570);
-        setMotorPower(m1Forward, m1Reverse, 0);
-        setMotorPower(m2Forward, m2Reverse, 0);
-      }
-    }
-    if (dir == EAST)
-    {
-      if (((~ getWalls()) & 0b0100) == 0b0100)
-      {
-        turnRight(570);
-        setMotorPower(m1Forward, m1Reverse, 0);
-        setMotorPower(m2Forward, m2Reverse, 0);
-      }
-    }
-    if (dir == WEST)
-    {
-      if (((~ getWalls()) & 0b1000) == 0b1000)
-      {
-        turnRight(570);
-        setMotorPower(m1Forward, m1Reverse, 0);
-        setMotorPower(m2Forward, m2Reverse, 0);
-      }
-    }
-    if (dir == SOUTH)
-    {
-      if (((~getWalls()) & 0b0001) == 0b0001)
-      {
-        turnRight(570);
-      }
-    }
+    //turnRight(RIGHTANGLE, 20, -20);
+    //delay(1000);
   }
-
+//  
+//  if (isFrontWall())
+//  {
+//    setMotorPower(m1Forward, m1Reverse, 0);
+//    setMotorPower(m2Forward, m2Reverse, 0);
+//    
+//    if (dir == NORTH)
+//    {
+//      if (((~ getWalls()) & 0b0010) == 0b0010)
+//      {
+//        turnRight(RIGHTANGLE);
+//        setMotorPower(m1Forward, m1Reverse, 0);
+//        setMotorPower(m2Forward, m2Reverse, 0);
+//      }
+//    }
+//    if (dir == EAST)
+//    {
+//      if (((~ getWalls()) & 0b0100) == 0b0100)
+//      {
+//        turnRight(RIGHTANGLE);
+//        setMotorPower(m1Forward, m1Reverse, 0);
+//        setMotorPower(m2Forward, m2Reverse, 0);
+//      }
+//    }
+//    if (dir == WEST)
+//    {
+//      if (((~ getWalls()) & 0b1000) == 0b1000)
+//      {
+//        turnRight(RIGHTANGLE);
+//        setMotorPower(m1Forward, m1Reverse, 0);
+//        setMotorPower(m2Forward, m2Reverse, 0);
+//      }
+//    }
+//    if (dir == SOUTH)
+//    {
+//      if (((~getWalls()) & 0b0001) == 0b0001)
+//      {
+//        turnRight(RIGHTANGLE);
+//      }
+//    }
+//  }
+//
   Serial.print("Walls: ");
   Serial.println(getWalls());
   
@@ -293,8 +307,8 @@ void loop()
   Serial.println(totalErrorM2);
   Serial.println();
   Serial.println();
-  
-  delay(50);
+//  
+    delay(50);
 }
 
 void IRCalibration()
@@ -310,13 +324,21 @@ void IRCalibration()
 
   delay(1000);
   
-  turnLeft(570);
+  turnLeft(600, 0, 60);
 
   delay(1000);
 
-  reverse(200);
+  m1Power = -30;
+  m2Power = -30;
+  reverse(200, -60);
+
+  m1Power = 0;
+  m2Power = 0;
   
   delay(1000);
+
+  setMotorPower(m1Forward, m1Reverse, 0);
+  setMotorPower(m2Forward, m2Reverse, 0);
 
   readIR();
 
@@ -543,16 +565,16 @@ bool isFrontWall()
   return false;
 }
 
-void turnRight(short ticks)
+void turnRight(short ticks, short m1Speed, short m2Speed)
 {
-  // ticks: 570 = 90 degree, 250 = 45 degree
+  // ticks: RIGHTANGLE = 90 degree, 250 = 45 degree
   short enc1Old = encoderM1.read();
 
   while(encoderM1.read() <= (enc1Old + ticks))
   {
-    motorPD(30, 0);
-    setMotorPower(m1Forward, m1Reverse, m1Power);
-    setMotorPower(m2Forward, m2Reverse, m2Power);
+    motorPD(m1Speed, m2Speed);
+    setMotorPower(m1Forward, m1Reverse, m1Speed);
+    setMotorPower(m2Forward, m2Reverse, m2Speed);
     delay(50);
   }
 
@@ -582,14 +604,14 @@ void turnRight(short ticks)
 
 }
 
-void turnLeft(short ticks)
+void turnLeft(short ticks, short m1Speed, short m2Speed)
 {
-  // ticks: 570 = 90 degree, 250 = 45 degree
+  // ticks: RIGHTANGLE = 90 degree, 250 = 45 degree
   short enc_old = encoderM2.read();
 
   while(encoderM2.read() <= (enc_old + ticks))
   {
-    motorPD(0, 30);
+    motorPD(m1Speed, m2Speed);
     setMotorPower(m1Forward, m1Reverse, m1Power);
     setMotorPower(m2Forward, m2Reverse, m2Power);
     delay(50);
@@ -618,15 +640,18 @@ void turnLeft(short ticks)
 
 }
 
-void reverse(short ticks)
+void reverse(short ticks, short speed)
 {
+  setMotorPower(m1Forward, m1Reverse, 0);
+  setMotorPower(m2Forward, m2Reverse, 0);
+  
   short enc1Old = encoderM1.read();
   short enc2Old = encoderM2.read();  
 
   while(encoderM1.read() >= (enc1Old - ticks))
   {
     encoderPD(enc1Old, enc2Old);
-    motorPD(-30, -30);
+    motorPD(speed, speed);
     setMotorPower(m1Forward, m1Reverse, m1Power);
     setMotorPower(m2Forward, m2Reverse, m2Power);
     delay(50);
@@ -637,7 +662,7 @@ void reverse(short ticks)
 
 }
 
-void forward(short ticks)
+void forward(short ticks, short speed)
 {
   short enc1Old = encoderM1.read();
   short enc2Old = encoderM2.read();
@@ -645,7 +670,7 @@ void forward(short ticks)
   while(encoderM1.read() <= (enc1Old + ticks))
   {
     encoderPD(enc1Old, enc2Old);
-    motorPD(30, 30);
+    motorPD(speed, speed);
     setMotorPower(m1Forward, m1Reverse, m1Power);
     setMotorPower(m2Forward, m2Reverse, m2Power);
     delay(50);
@@ -731,64 +756,64 @@ void dirToTurn(short dirTurn)
   {
     if (dirTurn == EAST)
     {
-      turnRight(570);
+      turnRight(RIGHTANGLE, 20, -20);
     }
     if (dirTurn == WEST)
     {
-      turnLeft(570);
+      turnLeft(RIGHTANGLE, -20, 20);
     }
     if (dirTurn == SOUTH)
     {
-      turnLeft(570);
-      turnLeft(570);
+      turnLeft(RIGHTANGLE, -20, 20);
+      turnLeft(RIGHTANGLE, -20, 20);
     }
   }
   else if (dir == EAST)
   {
     if (dirTurn == SOUTH)
     {
-      turnRight(570);
+      turnRight(RIGHTANGLE, 20, -20);
     }
     if (dirTurn == NORTH)
     {
-      turnLeft(570);
+      turnLeft(RIGHTANGLE, -20, 20);
     }
     if (dirTurn == WEST)
     {
-      turnLeft(570);
-      turnLeft(570);
+      turnLeft(RIGHTANGLE, -20, 20);
+      turnLeft(RIGHTANGLE, -20, 20);
     }
   }
   else if (dir == SOUTH)
   {
     if (dirTurn == WEST)
     {
-      turnRight(570);
+      turnRight(RIGHTANGLE, 20, -20);
     }
     if (dirTurn == EAST)
     {
-      turnLeft(570);
+      turnLeft(RIGHTANGLE, -20, 20);
     }
     if (dirTurn == NORTH)
     {
-      turnLeft(570);
-      turnLeft(570);
+      turnLeft(RIGHTANGLE, -20, 20);
+      turnLeft(RIGHTANGLE, -20, 20);
     }
   }
   else
   {
     if (dirTurn == NORTH)
     {
-      turnRight(570);
+      turnRight(RIGHTANGLE, 20, -20);
     }
     if (dirTurn == SOUTH)
     {
-      turnLeft(570);
+      turnLeft(RIGHTANGLE, -20, 20);
     }
     if (dirTurn == EAST)
     {
-      turnLeft(570);
-      turnLeft(570);
+      turnLeft(RIGHTANGLE, -20, 20);
+      turnLeft(RIGHTANGLE, -20, 20);
     }
   }
 }

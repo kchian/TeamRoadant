@@ -2,7 +2,7 @@
 Location createLocation(short r, short c, short edge, short dist);
 void floodfill();
 Node nodeCreator(short r,short c);
-void map();
+
 
 void setWeight(short r, short c, short direction, short value)
 {
@@ -108,6 +108,25 @@ void map() {
       while (row != cur.row2 or col != cur.col2)
       {
         Node i = history.pop();
+        if ((i.row - row) == 1)
+        {
+          //north
+          dirToTurn(NORTH);
+          forward(FORWARD, 20, 20);
+        }
+        if ((i.row - row) == -1)
+        {
+          //south
+        }
+        if ((i.col - col) == 1)
+        {
+          //east
+        }
+        if ((i.col - col) == -1)
+        {
+          //west
+        }
+        
         row = i.row;
         col = i.col;
         //Actually move the mouse here
@@ -118,9 +137,27 @@ void map() {
 
     
     //Actually move the mouse here
+    if ((cur.row1 - row) == 1)
+    {
+      //north
+    }
+    if ((cur.row1 - row) == -1)
+    {
+      //south
+    }
+    if ((cur.col1 - col) == 1)
+    {
+      //east
+    }
+    if ((cur.col1 - col) == -1)
+    {
+      //west
+    }
+    
     row = cur.row1;
     col = cur.col1;
-    //memory[row][col] = here we detect the walls
+    
+    memory[row][col] = getWalls() + CELL_CHECKED;
 
     if (atGoal()) {
       break;
@@ -220,6 +257,22 @@ void map() {
       while (row != cur.row2 or col != cur.col2)
       {
         Node i = history.pop();
+        if ((i.row - row) == 1)
+        {
+          //north
+        }
+        if ((i.row - row) == -1)
+        {
+          //south
+        }
+        if ((i.col - col) == 1)
+        {
+          //east
+        }
+        if ((i.col - col) == -1)
+        {
+          //west
+        }
         row = i.row;
         col = i.col;
         //Actually move the mouse here
@@ -229,12 +282,28 @@ void map() {
     }
     
     //Actually move the mouse here
+    if ((cur.row1 - row) == 1)
+    {
+      //north
+    }
+    if ((cur.row1 - row) == -1)
+    {
+      //south
+    }
+    if ((cur.col1 - col) == 1)
+    {
+      //east
+    }
+    if ((cur.col1 - col) == -1)
+    {
+      //west
+    }
     row = cur.row1;
     col = cur.col1;
     if (row == 0 && col == 0) {
       break;
     }
-    //memory[row][col] = here we detect the walls
+    memory[row][col] = getWalls() + CELL_CHECKED;
     prevLen = (short)nextNode.count();
     short dirs[4] = {NORTH,EAST,SOUTH,WEST};
     for (int i = 0; i < 4; i++)
