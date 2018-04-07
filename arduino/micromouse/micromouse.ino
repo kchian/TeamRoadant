@@ -54,12 +54,13 @@ void motorPD();
 void encoderPD();
 void readIR();
 void IRPD();
-void isFrontWall();
+bool isFrontWall();
 void turnRight(short);
 void turnLeft(short);
 void forward(short);
 void reverse(short);
 short getWalls();
+void dirToTurn(short);
 
 // Built-in led
 const short led = 13;
@@ -153,7 +154,7 @@ short frontOffset;
 short frontEncAvg;
 
 // Orientation
-short dir = NORTH;
+short dir = EAST;
 
 void setup() 
 {
@@ -203,7 +204,13 @@ void loop()
   setMotorPower(m1Forward, m1Reverse, m1Power);
   setMotorPower(m2Forward, m2Reverse, m2Power);
   
-  isFrontWall();
+  if (isFrontWall())
+  {
+    if (getWalls() ==  )
+    setMotorPower(m1Forward, m1Reverse, 0);
+    setMotorPower(m2Forward, m2Reverse, 0);
+    turnRight(570);
+  }
 
   Serial.print("Walls: ");
   Serial.println(getWalls());
@@ -259,19 +266,18 @@ void loop()
 
 void IRCalibration()
 {
+
+  Serial.println("Running Calibration");
+  
   readIR();
 
   // Calibrate the front IR
   frontOffset = r3 - r4;
-  frontWallValue = ((r3 + r4) / 2) - 5;
-
-  // Calibrate the right IR
-  rightMiddleValue = r1;
-  rightWallValue = r1 - 5;
+  frontWallValue = ((r3 + r4) / 2);
 
   delay(1000);
   
-  turnLeft(500);
+  turnLeft(570);
 
   delay(1000);
 
@@ -280,14 +286,20 @@ void IRCalibration()
   delay(1000);
 
   readIR();
+
+  // Calibrate the right IR
+  rightMiddleValue = r1;
+  rightWallValue = r1;
   
   // Calibrate the left IR
   leftMiddleValue = r2;
-  leftWallValue = r2 - 5;
+  leftWallValue = r2;
   
   rightLeftOffset = rightMiddleValue - leftMiddleValue;
 
   delay(1000);
+
+  Serial.println("Calibration complete");
 }
 
 void setMotorPower(short mForward, short mReverse, short pwr)
@@ -488,20 +500,20 @@ void IRPD()
   
 }
 
-void isFrontWall()
+bool isFrontWall()
 {
   frontEncAvg = (r3 + r4 + frontOffset) / 2;
   if (frontEncAvg > frontWallValue)
   {
-    setMotorPower(m1Forward, m1Reverse, 0);
-    setMotorPower(m2Forward, m2Reverse, 0);
+    return true;
   }
+  return false;
 }
 
 void turnRight(short ticks)
 {
-  // ticks: 500 = 90 degree, 250 = 45 degree
-  enc1Old = encoderM1.read();
+  // ticks: 570 = 90 degree, 250 = 45 degree
+  short enc1Old = encoderM1.read();
 
   while(encoderM1.read() <= (enc1Old + ticks))
   {
@@ -536,7 +548,7 @@ void turnRight(short ticks)
 
 void turnLeft(short ticks)
 {
-  // ticks: 500 = 90 degree, 250 = 45 degree
+  // ticks: 570 = 90 degree, 250 = 45 degree
   short enc_old = encoderM2.read();
 
   while(encoderM2.read() <= (enc_old + ticks))
@@ -572,10 +584,12 @@ void turnLeft(short ticks)
 
 void reverse(short ticks)
 {
-  short enc_old = encoderM1.read();
+  short enc1Old = encoderM1.read();
+  short enc2Old = encoderM2.read();  
 
-  while(encoderM1.read() >= (enc_old - ticks))
+  while(encoderM1.read() >= (enc1Old - ticks))
   {
+    encoderPD(enc1Old, enc2Old);
     motorPD(-30, -30);
     setMotorPower(m1Forward, m1Reverse, m1Power);
     setMotorPower(m2Forward, m2Reverse, m2Power);
@@ -674,3 +688,72 @@ short getWalls()
 
   return walls;
 }
+
+void dirToTurn(short dirTurn)
+{
+  if (dir == NORTH)
+  {
+    if (dirToTurn == EAST)
+    {
+      rightTurn();
+    }
+    if (dirToTurn == WEST)
+    {
+      leftTurn();
+    }
+    if (dirToTurn == SOUTH)
+    {
+      leftTurn();
+      leftTurn();
+    }
+  }
+  else if (dir == EAST)
+  {
+    if (dirToTurn == SOUTH)
+    {
+      rightTurn();
+    }
+    if (dirToTurn == NORTH)
+    {
+      leftTurn();
+    }
+    if (dirToTurn == WEST)
+    {
+      leftTurn();
+      leftTurn();
+    }
+  }
+  else if (dir == SOUTH)
+  {
+    if (dirToTurn == WEST)
+    {
+      rightTurn();
+    }
+    if (dirToTurn == EAST)
+    {
+      leftTurn();
+    }
+    if (dirToTurn == NORTH)
+    {
+      leftTurn();
+      leftTurn();
+    }
+  }
+  else
+  {
+    if (dirToTurn == NORTH)
+    {
+      rightTurn();
+    }
+    if (dirToTurn == SOUTH)
+    {
+      leftTurn();
+    }
+    if (dirToTurn == EAST)
+    {
+      leftTurn();
+      leftTurn();
+    }
+  }
+}
+
