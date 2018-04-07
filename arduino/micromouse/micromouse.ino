@@ -206,10 +206,43 @@ void loop()
   
   if (isFrontWall())
   {
-    if (getWalls() ==  )
     setMotorPower(m1Forward, m1Reverse, 0);
     setMotorPower(m2Forward, m2Reverse, 0);
-    turnRight(570);
+    
+    if (dir == NORTH)
+    {
+      if (((~ getWalls()) & 0b0010) == 0b0010)
+      {
+        turnRight(570);
+        setMotorPower(m1Forward, m1Reverse, 0);
+        setMotorPower(m2Forward, m2Reverse, 0);
+      }
+    }
+    if (dir == EAST)
+    {
+      if (((~ getWalls()) & 0b0100) == 0b0100)
+      {
+        turnRight(570);
+        setMotorPower(m1Forward, m1Reverse, 0);
+        setMotorPower(m2Forward, m2Reverse, 0);
+      }
+    }
+    if (dir == WEST)
+    {
+      if (((~ getWalls()) & 0b1000) == 0b1000)
+      {
+        turnRight(570);
+        setMotorPower(m1Forward, m1Reverse, 0);
+        setMotorPower(m2Forward, m2Reverse, 0);
+      }
+    }
+    if (dir == SOUTH)
+    {
+      if (((~getWalls()) & 0b0001) == 0b0001)
+      {
+        turnRight(570);
+      }
+    }
   }
 
   Serial.print("Walls: ");
@@ -544,6 +577,9 @@ void turnRight(short ticks)
     dir = NORTH;
   }
 
+  Serial.print("dir: ");
+  Serial.println(dir);
+
 }
 
 void turnLeft(short ticks)
@@ -693,66 +729,66 @@ void dirToTurn(short dirTurn)
 {
   if (dir == NORTH)
   {
-    if (dirToTurn == EAST)
+    if (dirTurn == EAST)
     {
-      rightTurn();
+      turnRight(570);
     }
-    if (dirToTurn == WEST)
+    if (dirTurn == WEST)
     {
-      leftTurn();
+      turnLeft(570);
     }
-    if (dirToTurn == SOUTH)
+    if (dirTurn == SOUTH)
     {
-      leftTurn();
-      leftTurn();
+      turnLeft(570);
+      turnLeft(570);
     }
   }
   else if (dir == EAST)
   {
-    if (dirToTurn == SOUTH)
+    if (dirTurn == SOUTH)
     {
-      rightTurn();
+      turnRight(570);
     }
-    if (dirToTurn == NORTH)
+    if (dirTurn == NORTH)
     {
-      leftTurn();
+      turnLeft(570);
     }
-    if (dirToTurn == WEST)
+    if (dirTurn == WEST)
     {
-      leftTurn();
-      leftTurn();
+      turnLeft(570);
+      turnLeft(570);
     }
   }
   else if (dir == SOUTH)
   {
-    if (dirToTurn == WEST)
+    if (dirTurn == WEST)
     {
-      rightTurn();
+      turnRight(570);
     }
-    if (dirToTurn == EAST)
+    if (dirTurn == EAST)
     {
-      leftTurn();
+      turnLeft(570);
     }
-    if (dirToTurn == NORTH)
+    if (dirTurn == NORTH)
     {
-      leftTurn();
-      leftTurn();
+      turnLeft(570);
+      turnLeft(570);
     }
   }
   else
   {
-    if (dirToTurn == NORTH)
+    if (dirTurn == NORTH)
     {
-      rightTurn();
+      turnRight(570);
     }
-    if (dirToTurn == SOUTH)
+    if (dirTurn == SOUTH)
     {
-      leftTurn();
+      turnLeft(570);
     }
-    if (dirToTurn == EAST)
+    if (dirTurn == EAST)
     {
-      leftTurn();
-      leftTurn();
+      turnLeft(570);
+      turnLeft(570);
     }
   }
 }
