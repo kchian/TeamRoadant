@@ -4,7 +4,7 @@
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
 
-#define RIGHTANGLE 370
+#define RIGHTANGLE 320
 #define FORWARD 400//737
 
 // Flood fill vars
@@ -206,110 +206,122 @@ void loop()
 {
   readIR();
 
-  IRPD();
+  //IRPD();
 
   //motorPD(60, 60);
-  forward(FORWARD, 40);
+  m1Power = 0;
+  m2Power = 0;
+  forward(FORWARD, 30);
 
   delay(2000);
+  short x = getWalls();
+  Serial.println(dir);
+  Serial.println(x);
 
-  if (isFrontWall())
-  {
-    setMotorPower(m1Forward, m1Reverse, 0);
-    setMotorPower(m2Forward, m2Reverse, 0);
-    turnRight(RIGHTANGLE, 20, -20);
-    delay(2000);
-  }
-//  
 //  if (isFrontWall())
 //  {
 //    setMotorPower(m1Forward, m1Reverse, 0);
 //    setMotorPower(m2Forward, m2Reverse, 0);
-//    
-//    if (dir == NORTH)
-//    {
-//      if (((~ getWalls()) & 0b0010) == 0b0010)
-//      {
-//        turnRight(RIGHTANGLE);
-//        setMotorPower(m1Forward, m1Reverse, 0);
-//        setMotorPower(m2Forward, m2Reverse, 0);
-//      }
-//    }
+//    turnRight(RIGHTANGLE, 30, -30);
+//    delay(2000);
+//  }
+  
+//  if (isFrontWall())
+//  {
+//    setMotorPower(m1Forward, m1Reverse, 0);
+//    setMotorPower(m2Forward, m2Reverse, 0);
+    
+    if (dir == NORTH)
+    {
+      if ((x & 0b0010) == 0)
+      {
+        Serial.println("turned");
+        m1Power = 0;
+        m2Power = 0;
+        
+        turnLeft(600, 60, 0);
+        setMotorPower(m1Forward, m1Reverse, 0);
+        setMotorPower(m2Forward, m2Reverse, 0);
+      }
+    }
 //    if (dir == EAST)
 //    {
-//      if (((~ getWalls()) & 0b0100) == 0b0100)
+//      if ((getWalls() & 0b0100) == 0)
 //      {
-//        turnRight(RIGHTANGLE);
+//        turnRight(RIGHTANGLE, 40, -40);
 //        setMotorPower(m1Forward, m1Reverse, 0);
 //        setMotorPower(m2Forward, m2Reverse, 0);
 //      }
 //    }
 //    if (dir == WEST)
 //    {
-//      if (((~ getWalls()) & 0b1000) == 0b1000)
+//      if ((getWalls() & 0b1000) == 0)
 //      {
-//        turnRight(RIGHTANGLE);
+//        turnRight(RIGHTANGLE, 40, -40);
 //        setMotorPower(m1Forward, m1Reverse, 0);
 //        setMotorPower(m2Forward, m2Reverse, 0);
 //      }
 //    }
 //    if (dir == SOUTH)
 //    {
-//      if (((~getWalls()) & 0b0001) == 0b0001)
+//      if ((getWalls() & 0b0001) == 0)
 //      {
-//        turnRight(RIGHTANGLE);
+//        turnRight(RIGHTANGLE, 40, -40);
+//        setMotorPower(m1Forward, m1Reverse, 0);
+//        setMotorPower(m2Forward, m2Reverse, 0);
 //      }
-//    }
-//  }
-//
-  Serial.print("Walls: ");
-  Serial.println(getWalls());
+    //}
+
+  //}
   
-  Serial.print("Right Reciever: ");
-  Serial.println(r3);
-  Serial.print("Front Right Reciever: ");
-  Serial.println(r1);
-  Serial.print("Front Left Reciever: ");
-  Serial.println(r2);
-  Serial.print("Left Reciever: ");
-  Serial.println(r4);
-  Serial.println();
-  Serial.print("Right Encoder: ");
-  Serial.println(enc2);
-  Serial.print("Left Encoder: ");
-  Serial.println(enc1);
-  Serial.print("Right Encoder Ticks per Cycle: ");
-  Serial.println(enc2Speed);
-  Serial.print("Left Encoder Ticks per Cycle: ");
-  Serial.println(enc1Speed);
-  Serial.println();
-  Serial.print("Right Motor Power: ");
-  Serial.println(m2Power);
-  Serial.print("Left Motor Power: ");
-  Serial.println(m1Power);
-  Serial.println();
-  Serial.print("rightLeftOffset: ");
-  Serial.println(rightLeftOffset);
-  Serial.print("errorPIR: ");
-  Serial.println(errorPIR);
-  Serial.print("errorDIR: ");
-  Serial.println(errorDIR);
-  Serial.print("PD Error_IR: ");
-  Serial.println(totalErrorIR);
-  Serial.print("errorPM1: ");
-  Serial.println(errorPM1);
-  Serial.print("errorPM2: ");
-  Serial.println(errorPM2);
-  Serial.print("errorDM1: ");
-  Serial.println(errorDM1);
-  Serial.print("errorDM2: ");
-  Serial.println(errorDM2);
-  Serial.print("PD Error_m1: ");
-  Serial.println(totalErrorM1);
-  Serial.print("PD Error_m2: ");
-  Serial.println(totalErrorM2);
-  Serial.println();
-  Serial.println();
+//  Serial.print("Walls: ");
+//  Serial.println(getWalls());
+//  
+//  Serial.print("Right Reciever: ");
+//  Serial.println(r3);
+//  Serial.print("Front Right Reciever: ");
+//  Serial.println(r1);
+//  Serial.print("Front Left Reciever: ");
+//  Serial.println(r2);
+//  Serial.print("Left Reciever: ");
+//  Serial.println(r4);
+//  Serial.println();
+//  Serial.print("Right Encoder: ");
+//  Serial.println(enc2);
+//  Serial.print("Left Encoder: ");
+//  Serial.println(enc1);
+//  Serial.print("Right Encoder Ticks per Cycle: ");
+//  Serial.println(enc2Speed);
+//  Serial.print("Left Encoder Ticks per Cycle: ");
+//  Serial.println(enc1Speed);
+//  Serial.println();
+//  Serial.print("Right Motor Power: ");
+//  Serial.println(m2Power);
+//  Serial.print("Left Motor Power: ");
+//  Serial.println(m1Power);
+//  Serial.println();
+//  Serial.print("rightLeftOffset: ");
+//  Serial.println(rightLeftOffset);
+//  Serial.print("errorPIR: ");
+//  Serial.println(errorPIR);
+//  Serial.print("errorDIR: ");
+//  Serial.println(errorDIR);
+//  Serial.print("PD Error_IR: ");
+//  Serial.println(totalErrorIR);
+//  Serial.print("errorPM1: ");
+//  Serial.println(errorPM1);
+//  Serial.print("errorPM2: ");
+//  Serial.println(errorPM2);
+//  Serial.print("errorDM1: ");
+//  Serial.println(errorDM1);
+//  Serial.print("errorDM2: ");
+//  Serial.println(errorDM2);
+//  Serial.print("PD Error_m1: ");
+//  Serial.println(totalErrorM1);
+//  Serial.print("PD Error_m2: ");
+//  Serial.println(totalErrorM2);
+//  Serial.println();
+//  Serial.println();
 //  
     delay(50);
 }
@@ -323,7 +335,7 @@ void IRCalibration()
 
   // Calibrate the front IR
   frontOffset = r3 - r4;
-  frontWallValue = ((r3 + r4) / 2);
+  frontWallValue = ((r3 + r4) / 2) - 5;
 
   delay(1000);
   
@@ -333,7 +345,7 @@ void IRCalibration()
 
   m1Power = -30;
   m2Power = -30;
-  reverse(200, -60);
+  reverse(150, -40);
 
   m1Power = 0;
   m2Power = 0;
@@ -347,11 +359,11 @@ void IRCalibration()
 
   // Calibrate the right IR
   rightMiddleValue = r1;
-  rightWallValue = r1;
+  rightWallValue = r1 - 5;
   
   // Calibrate the left IR
   leftMiddleValue = r2;
-  leftWallValue = r2;
+  leftWallValue = r2 - 5;
   
   rightLeftOffset = rightMiddleValue - leftMiddleValue;
 
@@ -501,18 +513,18 @@ void IRPD()
   }
 
   // Only left wall
-  else if (r2 > leftWallValue)
-  {
-    errorPIR = 2 * (leftMiddleValue - r2);
-    errorDIR = errorPIR - olderrorPIR;
-  }
-
-  // Only right wall
-  else if (r1 > rightWallValue)
-  {
-    errorPIR = 2 * (r1 - rightMiddleValue);
-    errorDIR = errorPIR - olderrorPIR;
-  }
+//  else if (r2 > leftWallValue)
+//  {
+//    errorPIR = 2 * (leftMiddleValue - r2);
+//    errorDIR = errorPIR - olderrorPIR;
+//  }
+//
+//  // Only right wall
+//  else if (r1 > rightWallValue)
+//  {
+//    errorPIR = 2 * (r1 - rightMiddleValue);
+//    errorDIR = errorPIR - olderrorPIR;
+//  }
 
   // If no walls
   else if ((r2 < leftWallValue) && (r1 < rightWallValue))
@@ -672,6 +684,9 @@ void forward(short ticks, short speed)
 
   while(encoderM1.read() <= (enc1Old + ticks))
   {
+    readIR();
+    readEncoders();
+    IRPD();
     encoderPD(enc1Old, enc2Old);
     motorPD(speed, speed);
     setMotorPower(m1Forward, m1Reverse, m1Power);
@@ -686,6 +701,9 @@ void forward(short ticks, short speed)
 
 short getWalls()
 {
+
+  readIR();
+  
   short walls = 0x0;
   frontEncAvg = (r3 + r4 + frontOffset) / 2;
 

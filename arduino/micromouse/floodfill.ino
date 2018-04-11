@@ -112,19 +112,22 @@ void map() {
         {
           //north
           dirToTurn(NORTH);
-          forward(FORWARD, 20, 20);
+          forward(FORWARD, 20);
         }
         if ((i.row - row) == -1)
         {
-          //south
+          dirToTurn(SOUTH);
+          forward(FORWARD, 20);
         }
         if ((i.col - col) == 1)
         {
-          //east
+          dirToTurn(EAST);
+          forward(FORWARD, 20);
         }
         if ((i.col - col) == -1)
         {
-          //west
+          dirToTurn(WEST);
+          forward(FORWARD, 20);
         }
         
         row = i.row;
