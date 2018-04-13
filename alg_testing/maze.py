@@ -245,7 +245,7 @@ class Mouse:
     def map(self,edge):
         history = []
         next_node = []
-        # next node has its locations and the previous location
+        # next node has its locations and the previous location [1]
         next_node.append(((0,0),(0,0)))
         prevlen = 0
         while len(next_node) != 0:

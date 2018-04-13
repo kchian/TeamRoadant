@@ -35,21 +35,18 @@ struct location
   short edge;
   short dist;
 };
+typedef struct location Location;
 struct node
 {
   short row;
   short col;
 };
+typedef struct node Node;
 struct curPrev
 {
-  short row1;
-  short col1;
-  short row2;
-  short col2;
+  Node current;
+  Node prev;
 };
-
-typedef struct location Location;
-typedef struct node Node;
 typedef struct curPrev CurPrev;
 
 void IRCalibration();

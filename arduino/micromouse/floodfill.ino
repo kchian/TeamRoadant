@@ -34,6 +34,31 @@ Location createLocation(short r, short c, short edge, short dist) {
   return v;
 }
 
+void moveMouse(node next_square)
+{
+  if ((next_square.row - row) == 1)
+  {
+    //north
+    dirToTurn(NORTH);
+    forward(FORWARD, 20);
+  }
+  if ((next_square.row - row) == -1)
+  {
+    dirToTurn(SOUTH);
+    forward(FORWARD, 20);
+  }
+  if ((next_square.col - col) == 1)
+  {
+    dirToTurn(EAST);
+    forward(FORWARD, 20);
+  }
+  if ((next_square.col - col) == -1)
+  {
+    dirToTurn(WEST);
+    forward(FORWARD, 20);
+  }
+}
+
 void floodfill()
 {
   //Each north is row*16 + col, and row*16 + col +1 is west
@@ -97,68 +122,31 @@ void map() {
   StackArray <Node> history;
   StackArray <CurPrev> nextNode;
 
-  CurPrev origin = {0,0,0,0};
+  CurPrev origin = {nodeCreator(0,0),nodeCreator(0,0)};
   nextNode.push(origin);
 
   short prevLen = 0;
   while (!nextNode.isEmpty())
   {
     CurPrev cur = nextNode.pop();
-    if (row != cur.row2 or col != cur.col2) {
-      while (row != cur.row2 or col != cur.col2)
+    if (row != cur.prev.row or col != cur.prev.col) {
+      while (row != cur.prev.row or col != cur.prev.col)
       {
         Node i = history.pop();
-        if ((i.row - row) == 1)
-        {
-          //north
-          dirToTurn(NORTH);
-          forward(FORWARD, 20);
-        }
-        if ((i.row - row) == -1)
-        {
-          dirToTurn(SOUTH);
-          forward(FORWARD, 20);
-        }
-        if ((i.col - col) == 1)
-        {
-          dirToTurn(EAST);
-          forward(FORWARD, 20);
-        }
-        if ((i.col - col) == -1)
-        {
-          dirToTurn(WEST);
-          forward(FORWARD, 20);
-        }
-        
+        moveMouse(i);        
         row = i.row;
         col = i.col;
         //Actually move the mouse here
       }
       history.push(nodeCreator(row,col));
-
     }
 
     
     //Actually move the mouse here
-    if ((cur.row1 - row) == 1)
-    {
-      //north
-    }
-    if ((cur.row1 - row) == -1)
-    {
-      //south
-    }
-    if ((cur.col1 - col) == 1)
-    {
-      //east
-    }
-    if ((cur.col1 - col) == -1)
-    {
-      //west
-    }
-    
-    row = cur.row1;
-    col = cur.col1;
+    moveMouse(cur.current);
+
+    row = cur.current.row;
+    col = cur.current.col;
     
     memory[row][col] = getWalls() + CELL_CHECKED;
 
@@ -203,22 +191,22 @@ void map() {
       {
         if ((dirs[i] == WEST) && ((memory[row][col-1] & CELL_CHECKED) == 0))
         {
-          CurPrev x = {row, col-1, row, col};
+          CurPrev x = {nodeCreator(row, col-1), nodeCreator(row, col)};
           nextNode.push(x);
         }
         else if ((dirs[i] == EAST) && ((memory[row][col+1] & CELL_CHECKED) == 0))
         {
-          CurPrev x = {row, col+1, row, col};
+          CurPrev x = {nodeCreator(row, col+1), nodeCreator(row, col)};
           nextNode.push(x);
         }
         else if ((dirs[i] == SOUTH) && ((memory[row-1][col] & CELL_CHECKED) == 0))
         {
-          CurPrev x = {row-1, col, row, col};
+          CurPrev x = {nodeCreator(row-1, col), nodeCreator(row, col)};
           nextNode.push(x);
         }
         else if ((dirs[i] == NORTH) && ((memory[row+1][col] & CELL_CHECKED) == 0))
         {
-          CurPrev x = {row+1, col, row, col};
+          CurPrev x = {nodeCreator(row+1, col), nodeCreator(row, col)};
           nextNode.push(x);
         }
       }
@@ -249,33 +237,19 @@ void map() {
     nextNode.pop();
   }
 
-  CurPrev center = {row,col,row,col};
+  CurPrev center = {nodeCreator(row,col),nodeCreator(row,col)};
   nextNode.push(center);
 
   prevLen = 0;
   while (!nextNode.isEmpty())
   {
     CurPrev cur = nextNode.pop();
-    if (row != cur.row2 or col != cur.col2) {
-      while (row != cur.row2 or col != cur.col2)
+    if (row != cur.prev.row or col != cur.prev.col) {
+      while (row != cur.prev.row or col != cur.prev.col)
       {
         Node i = history.pop();
-        if ((i.row - row) == 1)
-        {
-          //north
-        }
-        if ((i.row - row) == -1)
-        {
-          //south
-        }
-        if ((i.col - col) == 1)
-        {
-          //east
-        }
-        if ((i.col - col) == -1)
-        {
-          //west
-        }
+        moveMouse(i);
+        
         row = i.row;
         col = i.col;
         //Actually move the mouse here
@@ -285,24 +259,11 @@ void map() {
     }
     
     //Actually move the mouse here
-    if ((cur.row1 - row) == 1)
-    {
-      //north
-    }
-    if ((cur.row1 - row) == -1)
-    {
-      //south
-    }
-    if ((cur.col1 - col) == 1)
-    {
-      //east
-    }
-    if ((cur.col1 - col) == -1)
-    {
-      //west
-    }
-    row = cur.row1;
-    col = cur.col1;
+    moveMouse(cur.current);
+
+    
+    row = cur.current.row;
+    col = cur.current.col;
     if (row == 0 && col == 0) {
       break;
     }
@@ -315,22 +276,22 @@ void map() {
       {
         if ((dirs[i] == WEST) && ((memory[row][col-1] & CELL_CHECKED) == 0))
         {
-          CurPrev x = {row, col-1, row, col};
+          CurPrev x = {nodeCreator(row, col-1), nodeCreator(row, col)};
           nextNode.push(x);
         }
         else if ((dirs[i] == EAST) && ((memory[row][col+1] & CELL_CHECKED) == 0))
         {
-          CurPrev x = {row, col+1, row, col};
+          CurPrev x = {nodeCreator(row, col+1), nodeCreator(row, col)};
           nextNode.push(x);
         }
         else if ((dirs[i] == SOUTH) && ((memory[row-1][col] & CELL_CHECKED) == 0))
         {
-          CurPrev x = {row-1, col, row, col};
+          CurPrev x = {nodeCreator(row-1, col), nodeCreator(row, col)};
           nextNode.push(x);
         }
         else if ((dirs[i] == NORTH) && ((memory[row+1][col] & CELL_CHECKED) == 0))
         {
-          CurPrev x = {row+1, col, row, col};
+          CurPrev x = {nodeCreator(row+1, col), nodeCreator(row, col)};
           nextNode.push(x);
         }
       }
@@ -357,15 +318,4 @@ short getRow(){
 short getCol(){
   return col;
 }
-// Bad, probably unneeded code
-//short* getMemory(){
-//  return memory;
-//}    
-//short* getNWeights(){
-//  return nWeights;
-//}
-//short* getWWeights(){
-//  return wWeights;
-//}
-
 
