@@ -22,7 +22,7 @@ Another issue is that maze-solving algorithms lack a level of complexity in phys
 
 Finally, going straight is better than turning in terms of time. Anyone who's programmed a robot from scratch knows that turning isn't as easy as hard-coded values, and since our mouse notably excludes a gyroscope, turning is a source of error as well as time inefficiency. Thus, the algorithm prefers going straight to turning, which is naturally included in the edge-based diagonal movement logic.
 
-![edge-based solving is better](img\grid.png) 
+![edge-based solving is better](img/grid.png) 
 
 ### General design comments
 
@@ -31,13 +31,13 @@ The mouse in the algorithm testing is designed to be stupid. It sees what the ph
 There are two ways of tracking mouse progression, a string-based print and a drawing. The drawing is only meant for viewing the final solution because well, animations are overkill. A frame-by-frame result is printed into a log file if you want to see the details.
 
 ### The results:
-![weighted maze](img\weights.png) 
+![weighted maze](img/weights.png) 
 The maze with its weights representing distance from the goal to each point in the maze. The diagonals are ~sqrt(2)/2, 0.707. 
 <br>
-![maze from the mouse's perspective](img\memory.png) 
+![maze from the mouse's perspective](img/memory.png) 
 The "memory" of the mouse as it traverses the maze. This is its last step in its path towards the goal
 <br>
-![solved maze](img\result.png)
+![solved maze](img/result.png)
 The path to the goal! Undiscovered walls are in black while purple is the area traversed.
 
 
