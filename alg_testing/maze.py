@@ -3,14 +3,10 @@
 
 # #### Python algorithm testing: for easy POC + debugging ###
 
-# In[66]:
-
-
+import sys
 from queue import Queue
-
-
-# In[67]:
-
+from PIL import Image, ImageDraw
+from math import sin,cos,radians
 
 # 16x16 grid representing walls, 2D "bytearray"
 # Each cell is a binary integer: north, east, south, west represented in a bit
@@ -24,46 +20,66 @@ SOUTH   = 0x4
 WEST    = 0x8
 # The size of each cell in the output
 PRINT_SIZE = 13
+def draw_state(maze, mouse, imgname, path=[]):
 
+    im = Image.new("RGB",(850,850),color="white")
 
-# In[68]:
+    d = ImageDraw.Draw(im)
 
+    curangle = 0
+    curloc = (75,50)
+    for command in path:
+        if command[0] == 1:
+            curangle +=  command[1]
+        elif command[0] == 0:
+            d.line([curloc,(curloc[0]+ command[1]*50*cos(radians(curangle)),curloc[1]+command[1]*50*sin(radians(curangle)))],fill="green")
+            curloc = (curloc[0]+ command[1]*50*cos(radians(curangle)),curloc[1]+command[1]*50*sin(radians(curangle)))
+        coords = (25,25)
 
-# # 16x16, mazes thanks to https://github.com/micromouseonline/micromouse-maze
-# physical_maze = [
-#   0x0e, 0x08, 0x0a, 0x08, 0x08, 0x0a, 0x08, 0x0a, 0x09, 0x0c, 0x09, 0x0c, 0x08, 0x0b, 0x0c, 0x09,
-#   0x0c, 0x02, 0x08, 0x01, 0x05, 0x0c, 0x02, 0x0a, 0x02, 0x03, 0x06, 0x03, 0x06, 0x0a, 0x03, 0x05,
-#   0x05, 0x0e, 0x03, 0x06, 0x00, 0x02, 0x0a, 0x0a, 0x08, 0x08, 0x0b, 0x0c, 0x0a, 0x08, 0x09, 0x05,
-#   0x04, 0x09, 0x0c, 0x09, 0x07, 0x0c, 0x09, 0x0d, 0x05, 0x05, 0x0e, 0x01, 0x0d, 0x07, 0x05, 0x05,
-#   0x05, 0x04, 0x01, 0x05, 0x0c, 0x03, 0x04, 0x01, 0x06, 0x02, 0x0b, 0x04, 0x02, 0x0a, 0x01, 0x05,
-#   0x04, 0x01, 0x04, 0x01, 0x04, 0x09, 0x07, 0x06, 0x09, 0x0e, 0x0a, 0x01, 0x0e, 0x0b, 0x05, 0x05,
-#   0x05, 0x04, 0x01, 0x07, 0x05, 0x06, 0x08, 0x0b, 0x06, 0x09, 0x0d, 0x04, 0x0a, 0x0a, 0x01, 0x05,
-#   0x04, 0x03, 0x05, 0x0e, 0x03, 0x0c, 0x02, 0x08, 0x09, 0x04, 0x03, 0x04, 0x08, 0x0a, 0x01, 0x05,
-#   0x06, 0x08, 0x02, 0x0b, 0x0c, 0x02, 0x09, 0x06, 0x03, 0x06, 0x09, 0x05, 0x07, 0x0d, 0x05, 0x05,
-#   0x0e, 0x00, 0x0b, 0x0d, 0x05, 0x0d, 0x07, 0x0c, 0x0a, 0x08, 0x02, 0x02, 0x08, 0x02, 0x01, 0x05,
-#   0x0e, 0x03, 0x0c, 0x01, 0x05, 0x06, 0x09, 0x05, 0x0c, 0x00, 0x09, 0x0d, 0x06, 0x09, 0x05, 0x05,
-#   0x0c, 0x08, 0x01, 0x05, 0x04, 0x0b, 0x05, 0x04, 0x03, 0x05, 0x06, 0x01, 0x0d, 0x06, 0x01, 0x05,
-#   0x07, 0x05, 0x06, 0x00, 0x00, 0x0b, 0x05, 0x06, 0x0a, 0x03, 0x0d, 0x06, 0x00, 0x0b, 0x05, 0x05,
-#   0x0e, 0x00, 0x0b, 0x05, 0x07, 0x0c, 0x03, 0x0c, 0x0a, 0x08, 0x02, 0x08, 0x02, 0x08, 0x01, 0x05,
-#   0x0e, 0x01, 0x0e, 0x03, 0x0c, 0x02, 0x08, 0x02, 0x08, 0x02, 0x09, 0x06, 0x09, 0x05, 0x07, 0x05,
-#   0x0e, 0x02, 0x0a, 0x0a, 0x02, 0x0a, 0x02, 0x0a, 0x02, 0x0a, 0x02, 0x0a, 0x02, 0x02, 0x0a, 0x03
-# ]
-
-physical_maze = [0 for i in range(256)]
-# raw_maze = ''
-# Assumes valid maze file....
-with open('japan-2011-finals.maz','rb') as f:
-    ind = 0
-    for line in f:
-        for char in line:
-            physical_maze[ind] = char
-            ind += 1
-print(len(physical_maze))
-print(physical_maze)
-
-
-# In[69]:
-
+    if type(maze[0]) == list:
+        maze = list(list(reversed(i) for i in zip(*maze[::-1])))
+        m2 = []
+        for i in maze:
+            for j in i:
+                m2.append(j)
+        maze = m2
+    if type(mouse.memory[0]) == list:
+        m = list(list(reversed(i) for i in zip(*mouse.memory[::-1])))
+        m2 = []
+        for i in m:
+            for j in i:
+                m2.append(j)
+        m = m2
+    else:
+        m = mouse.memory
+    for ind,i in enumerate(maze):
+        coords = (ind%16*50+50,ind//16*50+50)
+        if i & WEST:
+            d.line([(coords[0]-25, coords[1]-25), (coords[0]+25, coords[1]-25)],fill=12)
+        if i & NORTH:
+            d.line([(coords[0]+25, coords[1]+25), (coords[0]+25, coords[1]-25)],fill=12)
+        if i & EAST:
+            d.line([(coords[0]+25, coords[1]+25), (coords[0]-25, coords[1]+25)],fill=12)
+        if i & SOUTH:
+            d.line([(coords[0]-25, coords[1]-25), (coords[0]-25, coords[1]+25)],fill=12)
+    
+    for ind,i in enumerate(m):
+        coords = (ind%16*50+50,ind//16*50+50)
+        if i & WEST:
+            d.line([(coords[0]-25, coords[1]-25), (coords[0]+25, coords[1]-25)],fill="purple", width = 3)
+        if i & NORTH:
+            d.line([(coords[0]+25, coords[1]+25), (coords[0]+25, coords[1]-25)],fill="purple", width = 3)
+        if i & EAST:
+            d.line([(coords[0]+25, coords[1]+25), (coords[0]-25, coords[1]+25)],fill="purple", width = 3)
+        if i & SOUTH:
+            d.line([(coords[0]-25, coords[1]-25), (coords[0]-25, coords[1]+25)],fill="purple", width = 3)
+    
+    
+    coords = (mouse.row*50+50,mouse.col*50+50)
+    r = 10
+    d.ellipse((coords[0]-r, coords[1]-r, coords[0]+r, coords[1]+r), fill=(255,0,0,0))
+    im.save(imgname)
+    im.show()
 
 def printMaze(maze,robot,n_weights=None,w_weights=None):
     # maze out is a list of strings, each representing a row
@@ -131,18 +147,12 @@ def printMaze(maze,robot,n_weights=None,w_weights=None):
 
 
     #print('\n'.join([''.join(i) for i in maze_out]))
-    with open('mazeiters','a+') as f:
+    with open('mazeiters.out','a+') as f:
         f.write('\n'.join([''.join(i) for i in maze_out])+'\n'+'#'*100+'\n')
-
-
-# In[70]:
 
 
 def search(row,col):
     return physical_maze[col*16+row]
-
-
-# In[71]:
 
 
 # Cell weight tracker
@@ -150,18 +160,13 @@ class Cell:
     def __init__(self,north=None, south=None, east=None, west=None):
         self.north = north
         self.west = west
+
     
     def __repr__(self):
         return 'Cell:' + 'N: ' + str(self.north) + 'W: ' + str(self.west) + '   '
 
 
-# In[72]:
-
-
 neighbor_pattern = [(0,1),(0,-1),(1,0),(-1,0)]
-
-
-# In[191]:
 
 
 class Mouse:
@@ -182,10 +187,12 @@ class Mouse:
         self.goal_found = False
         self.path = []
         self.relative_path = []
+
             
     def neighbors(self,row,col):
         x = [(row+1,col), (row-1,col),(row,col+1),(row,col-1)]
         return [i for i in x if i[0]<16 and i[1]<16 and i[0]>0 and i[1]>0]
+
     
     def set_weight(self, r,c, direction, value):
         if r < 0 or r > 15 or c < 0 or c > 15:
@@ -194,22 +201,25 @@ class Mouse:
             self.n_weights[r][c] = value
         if direction == WEST and (self.w_weights[r][c] == None or self.w_weights[r][c] > value):
             self.w_weights[r][c] = value
+
             
     def at_goal(self):
         return self.row in (7,8) and self.col in (7,8)
-    
+   
+ 
     #floodfill algorithm on the mouse memory
     #based on bfs
     def floodfill(self): 
-        # TODO: delete this line, it's unnecessary
-        visited = []
-        
+        visited = [] 
         q = Queue()
         # row, col, edge, dist
         q.put((7,7,NORTH,0))
         while not q.empty():
             cur = q.get()
-            if cur[0] < 0 or cur[0] > 15 or cur[1] < 0 or cur[1] > 15                 or ((cur[0],cur[1],cur[2]) in visited)                 or self.memory[cur[0]][cur[1]] == 0                 or (self.memory[cur[0]][cur[1]] & cur[2]):
+            if cur[0] < 0 or cur[0] > 15 or cur[1] < 0 or cur[1] > 15 \
+                     or ((cur[0],cur[1],cur[2]) in visited) \
+                     or self.memory[cur[0]][cur[1]] == 0 \
+                     or (self.memory[cur[0]][cur[1]] & cur[2]):
                 continue
             printMaze(self.memory,Mouse(cur[0],cur[1],cur[2]),self.n_weights,self.w_weights)
             visited.append((cur[0],cur[1],cur[2]))
@@ -240,8 +250,10 @@ class Mouse:
     # So each edge has a distance, and we'll assume we start on the bottom edge...        
     
     def map_helper(self):
+        #edge here is the edge we start at
         self.map(self.edge)
-    #edge here is the edge we start at
+    
+
     def map(self,edge):
         history = []
         next_node = []
@@ -250,12 +262,6 @@ class Mouse:
         prevlen = 0
         while len(next_node) != 0:
             cur = next_node.pop()
-#             print(next_node)
-#             print(history)
-#             print(cur[0])
-#             print(cur[1])
-#             print((self.row,self.col))
-#             print()
             if (self.row,self.col) != cur[1]:
                 while (self.row,self.col) != cur[1]:
                     i = history.pop()
@@ -305,12 +311,6 @@ class Mouse:
         prevlen = 0
         while len(next_node) != 0:
             cur = next_node.pop() 
-#             print(next_node)
-#             print(history)
-#             print(cur[0])
-#             print(cur[1])
-#             print((self.row,self.col))
-#             print()
             if (self.row,self.col) != cur[1]:
                 while (self.row,self.col) != cur[1]:
                     i = history.pop()
@@ -344,7 +344,8 @@ class Mouse:
         for i in range(16):
             for j in range(16):
                 self.memory[i][j] = max(self.memory[i][j],old_memory[i][j])   
-                
+               
+ 
     def get_dir_value(self,x):
         if x == NORTH:
             return 0
@@ -362,6 +363,7 @@ class Mouse:
             return -90
         return -45
         
+
     def create_path(self):
         # can just be struct of command (turning (0,1), value (if turning, angle, if not, dist)
         q = []
@@ -442,46 +444,41 @@ class Mouse:
                     d = self.get_dir_value(SOUTH+EAST)
                 c += 1
                 
-                
             cur_dist += dist_delta
             if angle != 0:
                 q.append((1,angle))
             q.append((0, cur_dist))
             cur_dist = 0
-            print(q)
-                
-            
+        return q                
 
+if __name__ == "__main__":
+    # load maze	
+    # mazes thanks to https://github.com/micromouseonline/micromouse-maze
+    if len(sys.argv) <= 1:
+        print("usage: python maze.py [maze file]")
+        sys.exit(-1)
+    physical_maze = [0 for i in range(256)]
+    fname = sys.argv[1] 
+    with open(fname,'rb') as f:
+        ind = 0
+        for line in f:
+            for char in line:
+                physical_maze[ind] = char
+                ind += 1
 
-# In[192]:
+    open('mazeiters.out','w+').close()
+    m = Mouse(edge=NORTH)
+    
+    print("mapping...")
+    m.map_helper()
+    printMaze(m.memory, m, m.n_weights, m.w_weights)  
+    
+    print("calculating distances and saving textual maze state in \"mazeiters.out\"....")
+    m.floodfill()
+    printMaze(m.memory, m, m.n_weights, m.w_weights)  
 
-
-open('mazeiters','w+').close()
-m = Mouse(edge=NORTH)
-m.map_helper()
-printMaze(m.memory,m,m.n_weights,m.w_weights)  
-
-
-
-# In[193]:
-
-
-#we might need a special case for where the mouse starts
-m.floodfill()
-printMaze(m.memory,m,m.n_weights,m.w_weights)  
-
-
-# In[194]:
-
-
-for i in m.memory:
-    for j in i:
-        print(str(j)+' ',end='')
-    print()
-
-
-# In[195]:
-
-
-m.create_path()
+    print("finding path...")
+    path = m.create_path()
+    print("drawing image, saving under \"soln.png\"")
+    draw_state(m.memory, m, "soln.png", path)
 
