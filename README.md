@@ -32,13 +32,13 @@ There are two ways of tracking mouse progression, a string-based print and a dra
 
 ### The results:
 ![weighted maze](img/weights.png) 
-The maze with its weights representing distance from the goal to each point in the maze. The diagonals are ~sqrt(2)/2, 0.707. 
+<br>The maze with its weights representing distance from the goal to each point in the maze. The diagonals are ~sqrt(2)/2, 0.707. 
 <br>
 ![maze from the mouse's perspective](img/memory.png) 
-The "memory" of the mouse as it traverses the maze. This is its last step in its path towards the goal
+<br>The "memory" of the mouse as it traverses the maze. This is its last step in its path towards the goal
 <br>
 ![solved maze](img/result.png)
-The path to the goal! Undiscovered walls are in black while purple is the area traversed.
+<br>The path to the goal! Undiscovered walls are in black while purple is the area traversed.
 
 
 
