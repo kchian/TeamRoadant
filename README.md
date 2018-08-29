@@ -1,5 +1,5 @@
 # TeamRoadAnt
-![Algernon]()
+![Algernon](img/algernon.png)
 Code and documentation for a MicroMouse team with Jigar Hira, Kevin Chian, Tritai Nguyen, Dominic Carone, and Dylan Kao of UC Irvine. MicroMouse is a competition hosted by IEEE where small, 25x25cm autonomous robots are made to solve a 16x16 unit maze with the start in a corner and goal in the center four squares. Multiple solutions are possible in each maze. [Full rules]( http://micromouseusa.com/wp-content/uploads/2016/04/IEEE-Region-6-Southern-Area-MicroMouse-Competition-Rules.pdf)
 
 This repository contains two major parts -- a maze-solving algorithm testbed (coded in python) meant for a quick development pipeline / visualizations, and the .ino code to run on the micromouse itself. The test folder is a program for pre-competition diagnostics and a general health check. 
