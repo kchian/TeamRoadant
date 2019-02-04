@@ -4,7 +4,7 @@ Code and documentation for a MicroMouse team with Jigar Hira, Kevin Chian, Trita
 
 This repository contains two major parts -- a maze-solving algorithm testbed (coded in python) meant for a quick development pipeline / visualizations, and the .ino code to run on the micromouse itself. The test folder is a program for pre-competition diagnostics and a general health check. 
 
-Technical details below, but if you want to run the program without downloading anything [check out a hosted colaboratory notebook](www.google.com).
+Technical details below, but if you want to run the program without downloading anything [check out a hosted colaboratory notebook](https://colab.research.google.com/drive/1ytnz07Vg_cXq2tDZA7e1z1qdqEw4iHW1?authuser=1#scrollTo=kQrzCeRvGJV1&forceEdit=true&offline=true&sandboxMode=true).
 
 ## The algorithm
 
